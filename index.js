@@ -82,6 +82,7 @@ async function cancelAllOpenOrder() {
 }
 
 async function createOrder(bidType, price) {
+  number_of_time_order_executed++
   return true
   const cancel = await cancelAllOpenOrder();
   if (!cancel.status) return cancel;
@@ -121,6 +122,7 @@ async function createOrder(bidType, price) {
 }
 
 async function init() {
+  await cancelAllOpenOrder()
   const result = await getCurrentPriceOfBitcoin();
   if (!result.status) return;
 
