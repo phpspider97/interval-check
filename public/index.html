@@ -51,10 +51,12 @@
       document.getElementById("totalProfit").textContent = data.totalProfit;
       document.getElementById("orders").textContent = data.ordersExecuted;
 
-      if(parseInt(data.price)>parseInt(data.border_price)){
+      if(parseInt(data.price)>parseInt(data.border_buy_price)){
         document.getElementById("price_parent").style.backgroundColor = "forestgreen"
-      }else{
+      }else if(parseInt(data.price)<parseInt(data.border_sell_price)){
         document.getElementById("price_parent").style.backgroundColor = "rgb(236, 39, 17)"
+      }else{
+        document.getElementById("price_parent").style.backgroundColor = "#161b22"
       }
 
     });
