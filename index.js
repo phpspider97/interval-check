@@ -22,6 +22,7 @@ let border_sell_loss_price;
 
 let buy_response = null;
 let sell_response = null;
+let botRunning = true;
 
 const SLIPPAGE = 30;
 const api_url = "https://api.india.delta.exchange";
@@ -29,6 +30,7 @@ const key = "3dSIQaAYjeChQ5a8gEnAJ2tYGpHeXF";
 const secret = "HRUnXDAKita82DVMvC4WdYZxj4k8mfHuWKRv01nwcHsMQXGHkAP5aV2C9EN7";
 
 function resetBot() {
+  botRunning = true;
   lotSize = 5;
   current_profit = 0;
   total_profit = 0;
@@ -191,6 +193,7 @@ async function triggerOrder(current_price) {
 }
 
 async function getBitcoinPriceLoop() {
+  if (!botRunning) return;
   try {
     const res = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
     const price = parseFloat(res.data?.result?.close);
@@ -201,13 +204,19 @@ async function getBitcoinPriceLoop() {
   }
 }
 
+emitter.on("stop", () => {
+  botRunning = false; 
+  emitter.emit("log", { type: "warn", message: "Bot has been stopped." });
+});
+
 async function startBot() {
-  //await init();
   setInterval(getBitcoinPriceLoop, 1000);
 }
 
 emitter.on("restart", () => {
   resetBot();
 });
+
+
 
 module.exports = { startBot, emitter };

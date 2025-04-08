@@ -17,22 +17,23 @@ emitter.on("update", (data) => {
   io.emit("update", data);
   const now = Date.now();
   if (!lastConsoleUpdate || now - lastConsoleUpdate > 1000) {
-    console.clear();
-    console.log("📈 Bitcoin Trading Bot - Live Stats");
-    console.table({
-        "Bitcoin Product Id":data.bitcoin_product_id,
-        "Border Buy Profit Price":data.border_buy_profit_price,
-        "Border Buy Price":data.border_buy_price,
-        "Border Price":data.border_price,
-        "Border Sell Price":data.border_sell_price,
-        "Border Sell Profit Price":data.border_sell_profit_price,
-        "Current Price": data.price,
-        "Lot Size": data.lot,
-        "Current Profit": data.profit,
-        "Total Profit": data.totalProfit,
-        "Orders Executed": data.ordersExecuted,
-    });
+    // console.clear();
     lastConsoleUpdate = now;
+    emitter.emit("log", { type: "Info", message: 
+         `${JSON.stringify({
+            "Bitcoin Product Id":data.bitcoin_product_id,
+            "Border Buy Profit Price":data.border_buy_profit_price,
+            "Border Buy Price":data.border_buy_price,
+            "Border Price":data.border_price,
+            "Border Sell Price":data.border_sell_price,
+            "Border Sell Profit Price":data.border_sell_profit_price,
+            "Current Price": data.price,
+            "Lot Size": data.lot,
+            "Current Profit": data.profit,
+            "Total Profit": data.totalProfit,
+            "Orders Executed": data.ordersExecuted,
+        })}`
+    })
   }
 });
 
@@ -46,7 +47,13 @@ io.on("connection", (socket) => {
     console.log("🔁 Restarting bot...");
     emitter.emit("restart");
   });
+  socket.on("stop", () => {
+    console.log("⛔ Bot stopped manually.");
+    emitter.emit("stop");
+  });
 });
+
+  
 
 server.listen(3000, () => {
   console.log("🚀 Server running on http://localhost:3000");

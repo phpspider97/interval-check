@@ -33,6 +33,10 @@
   <button id="restartBtn" style="margin-top: 30px; padding: 10px 20px; background-color: #444; color: white; border: none; border-radius: 6px; cursor: pointer;">
     🔄 Restart Bot 
   </button> 
+  <button id="stopBtn" style="margin-top: 10px; padding: 10px 20px; background-color: crimson; color: white; border: none; border-radius: 6px; cursor: pointer;">
+    🛑 Stop Bot
+  </button>
+  
   <div class="log" id="log"></div>
 
   <script>
@@ -70,6 +74,10 @@
     document.getElementById("restartBtn").addEventListener("click", () => {
         socket.emit("restart");
     });
+    document.getElementById("stopBtn").addEventListener("click", () => {
+        socket.emit("stop");
+    });
+
   </script>
 </body>
 </html>
