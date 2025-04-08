@@ -14,6 +14,19 @@ app.use(express.static(path.join(__dirname, "public")));
 // Emit updates via socket
 emitter.on("update", (data) => {
   io.emit("update", data);
+  const now = Date.now();
+  if (!lastConsoleUpdate || now - lastConsoleUpdate > 1000) {
+    console.clear();
+    console.log("📈 Bitcoin Trading Bot - Live Stats");
+    console.table({
+      "Current Price": data.price,
+      "Lot Size": data.lot,
+      "Current Profit": data.profit,
+      "Total Profit": data.totalProfit,
+      "Orders Executed": data.ordersExecuted,
+    });
+    lastConsoleUpdate = now;
+  }
 });
 
 emitter.on("log", (data) => {
