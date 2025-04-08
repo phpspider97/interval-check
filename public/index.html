@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bitcoin Bot Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #0d1117; color: #f0f6fc; padding: 2rem; }
+    h1 { color: #58a6ff; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+    .card { background: #161b22; padding: 1.5rem; border-radius: 10px; }
+    .log { margin-top: 2rem; max-height: 200px; overflow-y: auto; background: #1f2731; padding: 1rem; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>💹 Bitcoin Trading Bot</h1>
+  <div class="grid">
+    <div class="card">💰 Current Price: <strong id="price">--</strong></div>
+    <div class="card">📦 Current Lot: <strong id="lot">--</strong></div>
+    <div class="card">💸 Current Profit: <strong id="profit">--</strong></div>
+    <div class="card">🏦 Total Profit: <strong id="totalProfit">--</strong></div>
+    <div class="card">⚙️ Orders Executed: <strong id="orders">--</strong></div>
+  </div>
+  <div class="log" id="log"></div>
+
+  <script>
+    const socket = io();
+
+    socket.on("update", data => {
+      document.getElementById("price").textContent = data.price;
+      document.getElementById("lot").textContent = data.lot;
+      document.getElementById("profit").textContent = data.profit;
+      document.getElementById("totalProfit").textContent = data.totalProfit;
+      document.getElementById("orders").textContent = data.ordersExecuted;
+    });
+
+    socket.on("log", data => {
+      const logBox = document.getElementById("log");
+      const logLine = document.createElement("div");
+      logLine.textContent = `[${data.type.toUpperCase()}] ${data.message || JSON.stringify(data)}`;
+      logBox.prepend(logLine);
+    });
+  </script>
+</body>
+</html>

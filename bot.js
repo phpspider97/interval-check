@@ -1,5 +1,8 @@
-import axios from 'axios'
-import crypto from 'crypto'
+const axios = require('axios');
+const crypto = require('crypto');
+
+const EventEmitter = require('events');
+const emitter = new EventEmitter();
 
 let bitcoin_product_id;
 let current_bitcoin_price;
@@ -26,19 +29,13 @@ const key = "3dSIQaAYjeChQ5a8gEnAJ2tYGpHeXF";
 const secret = "HRUnXDAKita82DVMvC4WdYZxj4k8mfHuWKRv01nwcHsMQXGHkAP5aV2C9EN7";
 
 async function generateEncryptSignature(signaturePayload) {
-  return crypto
-    .createHmac("sha256", secret)
-    .update(signaturePayload)
-    .digest("hex");
+  return crypto.createHmac("sha256", secret).update(signaturePayload).digest("hex");
 }
 
 async function getCurrentPriceOfBitcoin() {
   try {
     const response = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
-    if (response.data.success) {
-      return { data: response.data, status: true };
-    }
-    return { message: "Some issue getting price.", status: false };
+    return { data: response.data, status: true };
   } catch (error) {
     return { message: error.message, status: false };
   }
@@ -99,42 +96,36 @@ async function createOrder(bidType, price) {
 
     if (response.data.success) {
       number_of_time_order_executed++;
-      console.log(`✅ Order Executed: ${bidType.toUpperCase()} | Lot: ${current_lot}`);
       return { data: response.data, status: true };
     }
 
     return { message: "Order failed", status: false };
   } catch (error) {
-    console.error("Order error:", error.message);
     return { message: error.message, status: false };
   }
 }
 
 async function init() {
   const result = await getCurrentPriceOfBitcoin();
-  if (!result.status) return console.error(result.message);
+  if (!result.status) return;
 
   const markPrice = Math.round(result.data.result.close);
-  bitcoin_product_id = Math.round(result.data.result.product_id);
+  bitcoin_product_id = result.data.result.product_id;
   border_price = markPrice;
 
   border_buy_price = markPrice + 100;
   border_buy_profit_price = markPrice + 600;
-  border_buy_loss_price = markPrice + 100;
 
   border_sell_price = markPrice - 100;
   border_sell_profit_price = markPrice - 600;
-  border_sell_loss_price = markPrice - 100;
 
-  console.log(`\n--- INIT ---\nPrice: ${markPrice} | Border: ${border_price}\n`);
-  console.log(`Buy Border: ${border_buy_price}, Profit: ${border_buy_profit_price}`);
-  console.log(`Sell Border: ${border_sell_price}, Profit: ${border_sell_profit_price}`);
+  emitter.emit('log', { type: "init", markPrice });
 }
 
 async function triggerOrder(current_price) {
   if (current_lot >= 40) {
     current_lot = 5;
-    return await init();
+    await init();
   }
 
   if (!buy_response && current_price > border_buy_price) {
@@ -152,18 +143,24 @@ async function triggerOrder(current_price) {
   if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) {
     total_profit += current_profit;
     current_lot = 5;
-    console.log(`💰 Profit Booked. Total Profit: ${total_profit.toFixed(2)}\n`);
     await init();
   }
 
-  // Log profit in running trade
+  // Calculate current profit
   if (current_price > border_buy_price) {
     current_profit = ((current_price - border_buy_price) / 1000) * current_lot;
   } else if (current_price < border_sell_price) {
     current_profit = ((border_sell_price - current_price) / 1000) * current_lot;
   }
 
-  console.log(`📈 Price: ${current_price}, Lot: ${current_lot}, Current Profit: ${current_profit.toFixed(2)}`);
+  // Emit updates
+  emitter.emit("update", {
+    price: current_price,
+    lot: current_lot,
+    profit: current_profit.toFixed(2),
+    totalProfit: total_profit.toFixed(2),
+    ordersExecuted: number_of_time_order_executed,
+  });
 }
 
 async function getBitcoinPriceLoop() {
@@ -173,12 +170,13 @@ async function getBitcoinPriceLoop() {
     current_bitcoin_price = price;
     await triggerOrder(price);
   } catch (err) {
-    console.error("❌ Price fetch error:", err.message);
+    emitter.emit('log', { type: "error", message: err.message });
   }
 }
 
-// Start bot
-(async () => {
+async function startBot() {
   await init();
   setInterval(getBitcoinPriceLoop, 1000);
-})();
+}
+
+module.exports = { startBot, emitter };
