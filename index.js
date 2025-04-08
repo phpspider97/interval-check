@@ -68,6 +68,7 @@ async function cancelAllOpenOrder() {
 }
 
 async function createOrder(bidType, price) {
+  return true
   const cancel = await cancelAllOpenOrder();
   if (!cancel.status) return cancel;
 
