@@ -2,7 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-const { startBot, emitter } = require("./bot");
+const { startBot, emitter } = require("./index");
 
 const app = express();
 const server = http.createServer(app);
