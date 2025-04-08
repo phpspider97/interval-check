@@ -7,31 +7,56 @@
   <style>
     body { font-family: sans-serif; background: #0d1117; color: #f0f6fc; padding: 2rem; }
     h1 { color: #58a6ff; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
-    .card { background: #161b22; padding: 1.5rem; border-radius: 10px; }
+    .grid { display: inine; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .grid-block { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .card { background: #161b22; padding: 1rem; border-radius: 10px; border-bottom: 3px solid yellow; margin:10px }
     .log { margin-top: 2rem; max-height: 200px; overflow-y: auto; background: #1f2731; padding: 1rem; border-radius: 8px; }
   </style>
 </head>
 <body>
-  <h1>💹 Bitcoin Trading Bot</h1>
-  <div class="grid">
-    <div class="card">💰 Current Price: <strong id="price">--</strong></div>
+  <h1>💹 Bitcoin Trading Bot ( ID : <strong id="bitcoin_product_id">--</strong> )</h1>
+   
+  <div class="grid"> 
+    <div class="card" style="background: forestgreen;">💰 Border Buy Profit Price: <strong id="border_buy_profit_price">--</strong></div>
+    <div class="card" style="background: forestgreen;">💰 Border Buy Price: <strong id="border_buy_price">--</strong></div>
+    <div class="card" style="background: rgb(246, 236, 30);color:black;">💰 Border Price: <strong id="border_price">--</strong></div>
+    <div class="card" style="background: rgb(236, 39, 17);">💰 Border Sell Price: <strong id="border_sell_price">--</strong></div>
+    <div class="card" style="background: rgb(236, 39, 17);">💰 Border Sell Profit Price: <strong id="border_sell_profit_price">--</strong></div>
+  </div> 
+  <div class="grid-block">
+    <div class="card" id="price_parent">💰 Current Price: <strong id="price">--</strong></div>
     <div class="card">📦 Current Lot: <strong id="lot">--</strong></div>
     <div class="card">💸 Current Profit: <strong id="profit">--</strong></div>
-    <div class="card">🏦 Total Profit: <strong id="totalProfit">--</strong></div>
+    <div class="card" style="background: forestgreen;">🏦 Total Profit: <strong id="totalProfit">--</strong></div>
     <div class="card">⚙️ Orders Executed: <strong id="orders">--</strong></div>
   </div>
+  <button id="restartBtn" style="margin-top: 30px; padding: 10px 20px; background-color: #444; color: white; border: none; border-radius: 6px; cursor: pointer;">
+    🔄 Restart Bot 
+  </button> 
   <div class="log" id="log"></div>
 
   <script>
     const socket = io();
 
     socket.on("update", data => {
+      document.getElementById("bitcoin_product_id").textContent = data.bitcoin_product_id;
+      document.getElementById("border_price").textContent = data.border_price;
+      document.getElementById("border_buy_price").textContent = data.border_buy_price;
+      document.getElementById("border_buy_profit_price").textContent = data.border_buy_profit_price;
+      document.getElementById("border_sell_price").textContent = data.border_sell_price;
+      document.getElementById("border_sell_profit_price").textContent = data.border_sell_profit_price;
       document.getElementById("price").textContent = data.price;
       document.getElementById("lot").textContent = data.lot;
       document.getElementById("profit").textContent = data.profit;
       document.getElementById("totalProfit").textContent = data.totalProfit;
       document.getElementById("orders").textContent = data.ordersExecuted;
+
+      if(parseInt(data.price)>parseInt(data.border_price)){
+        document.getElementById("price_parent").style.backgroundColor = "forestgreen"
+      }else{
+        document.getElementById("price_parent").style.backgroundColor = "rgb(236, 39, 17)"
+      }
+
     });
 
     socket.on("log", data => {
@@ -39,6 +64,9 @@
       const logLine = document.createElement("div");
       logLine.textContent = `[${data.type.toUpperCase()}] ${data.message || JSON.stringify(data)}`;
       logBox.prepend(logLine);
+    });
+    document.getElementById("restartBtn").addEventListener("click", () => {
+        socket.emit("restart");
     });
   </script>
 </body>

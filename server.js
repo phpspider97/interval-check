@@ -20,11 +20,17 @@ emitter.on("update", (data) => {
     console.clear();
     console.log("📈 Bitcoin Trading Bot - Live Stats");
     console.table({
-      "Current Price": data.price,
-      "Lot Size": data.lot,
-      "Current Profit": data.profit,
-      "Total Profit": data.totalProfit,
-      "Orders Executed": data.ordersExecuted,
+        "Bitcoin Product Id":data.bitcoin_product_id,
+        "Border Buy Profit Price":data.border_buy_profit_price,
+        "Border Buy Price":data.border_buy_price,
+        "Border Price":data.border_price,
+        "Border Sell Price":data.border_sell_price,
+        "Border Sell Profit Price":data.border_sell_profit_price,
+        "Current Price": data.price,
+        "Lot Size": data.lot,
+        "Current Profit": data.profit,
+        "Total Profit": data.totalProfit,
+        "Orders Executed": data.ordersExecuted,
     });
     lastConsoleUpdate = now;
   }
@@ -36,6 +42,10 @@ emitter.on("log", (data) => {
 
 io.on("connection", (socket) => {
   console.log("🟢 Client connected");
+  socket.on("restart", () => {
+    console.log("🔁 Restarting bot...");
+    emitter.emit("restart");
+  });
 });
 
 server.listen(3000, () => {

@@ -28,6 +28,18 @@ const api_url = "https://api.india.delta.exchange";
 const key = "3dSIQaAYjeChQ5a8gEnAJ2tYGpHeXF";
 const secret = "HRUnXDAKita82DVMvC4WdYZxj4k8mfHuWKRv01nwcHsMQXGHkAP5aV2C9EN7";
 
+function resetBot() {
+  lotSize = 5;
+  current_profit = 0;
+  total_profit = 0;
+  ordersExecuted = 0;
+  buyExecuted = false;
+  sellExecuted = false;
+  border_price = 0;
+  emitter.emit("log", { type: "info", message: "Bot reset triggered." });
+  init();
+}
+
 async function generateEncryptSignature(signaturePayload) {
   return crypto.createHmac("sha256", secret).update(signaturePayload).digest("hex");
 }
@@ -122,6 +134,7 @@ async function init() {
 
   emitter.emit('log', { type: "init", markPrice });
 }
+init()
 
 async function triggerOrder(current_price) {
   if (current_lot >= 40) {
@@ -155,7 +168,20 @@ async function triggerOrder(current_price) {
   }
 
   // Emit updates
+  bitcoin_product_id
+  border_price
+  border_buy_price
+  border_buy_profit_price
+  border_sell_price
+  border_sell_profit_price
+
   emitter.emit("update", {
+    bitcoin_product_id:bitcoin_product_id,
+    border_price:border_price,
+    border_buy_price:border_buy_price,
+    border_buy_profit_price:border_buy_profit_price,
+    border_sell_price:border_sell_price,
+    border_sell_profit_price:border_sell_profit_price,
     price: current_price,
     lot: current_lot,
     profit: current_profit.toFixed(2),
@@ -176,8 +202,12 @@ async function getBitcoinPriceLoop() {
 }
 
 async function startBot() {
-  await init();
+  //await init();
   setInterval(getBitcoinPriceLoop, 1000);
 }
+
+emitter.on("restart", () => {
+  resetBot();
+});
 
 module.exports = { startBot, emitter };
