@@ -5,7 +5,7 @@
   <title>Bitcoin Bot Dashboard</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    body { font-family: sans-serif; background: #0d1117; color: #f0f6fc; padding: 2rem; }
+    body { font-family: sans-serif; background: #0d1117; color: #f0f6fc; padding: 1.5rem; }
     h1 { color: #58a6ff; }
     .grid { display: inine; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
     .grid-block { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem; }
@@ -24,18 +24,20 @@
     <div class="card" style="background: rgb(236, 39, 17);">💰 Border Sell Profit Price: <strong id="border_sell_profit_price">--</strong></div>
   </div> 
   <div class="grid-block">
-    <div class="card" id="price_parent">💰 Current Price: <strong id="price">--</strong></div>
+    <div class="card" id="price_parent">💰 Current Price: <strong id="price">--</strong> &nbsp;&nbsp; ( Difference : <strong id="price_difference">--</strong> pts )</div>
     <div class="card">📦 Current Lot: <strong id="lot">--</strong></div>
     <div class="card">💸 Current Profit: <strong id="profit">--</strong></div>
     <div class="card" style="background: forestgreen;">🏦 Total Profit: <strong id="totalProfit">--</strong></div>
     <div class="card">⚙️ Orders Executed: <strong id="orders">--</strong></div>
+    <div>
+        <button id="restartBtn" style="margin-left:10px;margin-top: 18px; padding: 15px 20px; background-color: #444; color: white; border: none; border-radius: 6px; cursor: pointer; width:180px;">
+            🔄 Restart Bot 
+        </button> 
+        <button id="stopBtn" style="margin-left:50px; margin-top: 10px; padding: 15px 20px; background-color: crimson; color: white; border: none; border-radius: 6px; cursor: pointer; width:180px;">
+            🛑 Stop Bot
+        </button>
+    </div>
   </div>
-  <button id="restartBtn" style="margin-top: 30px; padding: 10px 20px; background-color: #444; color: white; border: none; border-radius: 6px; cursor: pointer;">
-    🔄 Restart Bot 
-  </button> 
-  <button id="stopBtn" style="margin-top: 10px; padding: 10px 20px; background-color: crimson; color: white; border: none; border-radius: 6px; cursor: pointer;">
-    🛑 Stop Bot
-  </button>
   
   <div class="log" id="log"></div>
 
@@ -57,10 +59,13 @@
 
       if(parseInt(data.price)>parseInt(data.border_buy_price)){
         document.getElementById("price_parent").style.backgroundColor = "forestgreen"
+        document.getElementById("price_difference").textContent = parseInt(data.price)-parseInt(data.border_buy_price)
       }else if(parseInt(data.price)<parseInt(data.border_sell_price)){
         document.getElementById("price_parent").style.backgroundColor = "rgb(236, 39, 17)"
+        document.getElementById("price_difference").textContent = parseInt(data.border_sell_price)-parseInt(data.price)
       }else{
         document.getElementById("price_parent").style.backgroundColor = "#161b22"
+        document.getElementById("price_difference").textContent = 0
       }
 
     });

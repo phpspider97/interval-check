@@ -6,7 +6,7 @@ const emitter = new EventEmitter();
 
 let bitcoin_product_id;
 let current_bitcoin_price;
-let current_lot = 5;
+let current_lot = 30;
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -31,7 +31,7 @@ const secret = "HRUnXDAKita82DVMvC4WdYZxj4k8mfHuWKRv01nwcHsMQXGHkAP5aV2C9EN7";
 
 function resetBot() {
   botRunning = true;
-  lotSize = 5;
+  lotSize = 30;
   current_profit = 0;
   total_profit = 0;
   ordersExecuted = 0;
@@ -130,37 +130,37 @@ async function init() {
   bitcoin_product_id = result.data.result.product_id;
   border_price = markPrice;
 
-  border_buy_price = markPrice + 100;
-  border_buy_profit_price = markPrice + 600;
+  border_buy_price = markPrice + 50;
+  border_buy_profit_price = border_buy_price + 200;
 
-  border_sell_price = markPrice - 100;
-  border_sell_profit_price = markPrice - 600;
+  border_sell_price = markPrice - 50;
+  border_sell_profit_price = border_sell_price - 200;
 
   emitter.emit('log', { type: "init", markPrice });
 }
 init()
 
 async function triggerOrder(current_price) {
-  if (current_lot >= 40) {
-    current_lot = 5;
-    await init();
-  }
+  // if (current_lot >= 40) {
+  //   current_lot = 5;
+  //   await init();
+  // }
 
   if (!buy_response && current_price > border_buy_price) {
     buy_response = await createOrder('buy', current_price);
-    current_lot *= 2;
+    current_lot *= 1;
     sell_response = null;
   }
 
   if (!sell_response && current_price < border_sell_price) {
     sell_response = await createOrder('sell', current_price);
-    current_lot *= 2;
+    current_lot *= 1;
     buy_response = null;
   }
 
   if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) {
     total_profit += current_profit;
-    current_lot = 5;
+    current_lot = 30;
     await init();
   }
 
@@ -172,13 +172,6 @@ async function triggerOrder(current_price) {
   }
 
   // Emit updates
-  bitcoin_product_id
-  border_price
-  border_buy_price
-  border_buy_profit_price
-  border_sell_price
-  border_sell_profit_price
-
   emitter.emit("update", {
     bitcoin_product_id:bitcoin_product_id,
     border_price:border_price,
