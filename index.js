@@ -235,8 +235,7 @@ async function triggerOrder(current_price) {
   }
 }
 
-async function getBitcoinPriceLoop() {
-  console.log('api_url____',api_url)
+async function getBitcoinPriceLoop() { 
   if (!botRunning) return;
   try { 
     const res = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
