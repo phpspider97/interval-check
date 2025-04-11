@@ -89,6 +89,7 @@
         document.getElementById("current_balance").textContent = data.current_balance; 
 
         if(data.project_error_message != ''){
+            document.getElementById("project_error_message_parent").style.display = 'block'
             document.getElementById("project_error_message").textContent = data.project_error_message
         }else{
             document.getElementById("project_error_message_parent").style.display = 'none'
