@@ -25,6 +25,7 @@ let buy_sell_point = 50
 let buy_sell_profit_point = 200
 
 let order_exicuted_at_price = 0
+let project_error_message = ""
 
 const api_url = process.env.API_URL 
 const key = process.env.WEB_KEY
@@ -38,6 +39,7 @@ function resetBot() {
   buyExecuted = false;
   sellExecuted = false;
   border_price = 0;
+  project_error_message = '';
   order_exicuted_at_price = 0;
   emitter.emit("log", { type: "info", message: "Bot reset triggered." });
   init();
@@ -52,7 +54,7 @@ async function cancelAllOpenOrder() {
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
       close_all_portfolio: true,
-      close_all_isolated: true,
+      //close_all_isolated: true,
       user_id: process.env.WEB_USER_ID,
     }; 
     const signaturePayload = `POST${timestamp}/v2/positions/close_all${JSON.stringify(bodyParams)}`;
@@ -69,6 +71,7 @@ async function cancelAllOpenOrder() {
     return { data: response.data, status: response.data.success };
   } catch (error) {
     console.log('error.message___1_',error.response.data)
+    project_error_message = JSON.stringify(error.response.data)
     botRunning = false
     return { message: error.message, status: false };
   }
@@ -81,26 +84,30 @@ function updateInit(bidType,current_price){
       init(false)
   }
 }
-async function getOpenPosition() {
-  try {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signaturePayload = `GET${timestamp}/v2/positions/margined`;
-    const signature = await generateEncryptSignature(signaturePayload);
+// async function changeOrderLevarage() {
+//   try {
+//     const timestamp = Math.floor(Date.now() / 1000);
+//     const bodyParams = {
+//       leverage: 20,
+//     }; 
+//     const signaturePayload = `POST${timestamp}/v2/products/${bitcoin_product_id}/orders/leverage${JSON.stringify(bodyParams)}`;
+//     const signature = await generateEncryptSignature(signaturePayload);
 
-    const headers = {
-      "api-key": key,
-      "signature": signature,
-      "timestamp": timestamp,
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    }; 
-    const response = await axios.get(`${api_url}/v2/positions/margined`, { headers });
-    console.log('response____',response.data) 
-  } catch (error) {
-    console.log('error.message___1_',error.response.data)
-    return { message: error.message, status: false };
-  }
-}
+//     const headers = {
+//       "api-key": key,
+//       "signature": signature,
+//       "timestamp": timestamp,
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//     }; 
+//     const response = await axios.post(`${api_url}/v2/products/${bitcoin_product_id}/orders/leverage`, bodyParams, { headers });
+//     console.log('changeOrderLevarage____',response.data) 
+//   } catch (error) {
+//     console.log('changeOrderLevarage____error.message___1_',error.response.data)
+//     project_error_message = JSON.stringify(error.response.data)
+//     return { message: error.message, status: false };
+//   }
+// }
 async function createOrder(bidType,current_price) {
   // number_of_time_order_executed++;
   // updateInit(bidType,current_price)
@@ -115,8 +122,10 @@ async function createOrder(bidType,current_price) {
       size: current_lot,
       side: bidType,
       order_type: "market_order",
+      leverage: 100,
+      time_in_force: "ioc"
     };
-    //await getOpenPosition()
+    
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
     const signature = await generateEncryptSignature(signaturePayload);
 
@@ -133,12 +142,14 @@ async function createOrder(bidType,current_price) {
     if (response.data.success) {
       number_of_time_order_executed++;
       updateInit(bidType,current_price)
+      //await changeOrderLevarage()
       return { data: response.data, status: true };
     }
 
     return { message: "Order failed", status: false };
   } catch (error) {
     console.log('error.message___2_',error.response.data)
+    project_error_message = JSON.stringify(error.response.data)
     await cancelAllOpenOrder()
     botRunning = false
     return { message: error.message, status: false };
@@ -172,7 +183,7 @@ async function init(is_cancle_open_order=true) {
   border_sell_price = markPrice - buy_sell_point;
   border_sell_profit_price = border_sell_price - buy_sell_profit_point;
 
-  order_exicuted_at_price = 0
+  order_exicuted_at_price = 0 
 
   emitter.emit('log', { type: "init", markPrice });
 }
@@ -227,7 +238,8 @@ async function triggerOrder(current_price) {
       profit: current_profit.toFixed(2),
       totalProfit: total_profit.toFixed(2),
       ordersExecuted: number_of_time_order_executed,
-      order_exicuted_at_price: order_exicuted_at_price
+      order_exicuted_at_price: order_exicuted_at_price,
+      project_error_message: project_error_message
     })
   }catch(error){
     botRunning = false
