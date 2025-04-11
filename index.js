@@ -125,7 +125,8 @@ async function createOrder(bidType,current_price) {
       leverage: 100,
       time_in_force: "ioc"
     };
-    
+    console.clear();
+    console.log('bodyParams____',bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
     const signature = await generateEncryptSignature(signaturePayload);
 
