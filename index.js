@@ -6,7 +6,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 5;
+let current_lot = 60;
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -22,7 +22,7 @@ let buy_response = null;
 let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
-let buy_sell_profit_point = 200
+let buy_sell_profit_point = 100
 let cancel_gap = 70
 
 let order_exicuted_at_price = 0
