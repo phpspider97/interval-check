@@ -66,7 +66,7 @@
     </div>
     <div class="card card-width">📦 Current Lot: <strong id="lot">--</strong></div>
     <div class="card card-width">💸 Current Profit: <strong id="profit">--</strong></div>
-    <div class="card card-width" style="background: forestgreen;">🏦 Total Profit: <strong id="totalProfit">--</strong></div>
+    <div class="card card-width" style="background: forestgreen;">🏦 Profit: <strong id="totalProfit">--</strong> /  <strong id="current_balance">--</strong></div> 
     <div class="card card-width">⚙️ Orders Executed: <strong id="orders">--</strong></div>
   </div>
   
@@ -85,7 +85,9 @@
         document.getElementById("lot").textContent = data.lot;
         document.getElementById("profit").textContent = data.profit;
         document.getElementById("totalProfit").textContent = data.totalProfit;
-        document.getElementById("orders").textContent = data.ordersExecuted; 
+        document.getElementById("orders").textContent = data.ordersExecuted;
+        document.getElementById("current_balance").textContent = data.current_balance; 
+
         if(data.project_error_message != ''){
             document.getElementById("project_error_message").textContent = data.project_error_message
         }else{

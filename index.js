@@ -26,6 +26,7 @@ let buy_sell_profit_point = 200
 
 let order_exicuted_at_price = 0
 let project_error_message = ""
+let current_balance = 0
 
 const api_url = process.env.API_URL 
 const key = process.env.WEB_KEY
@@ -84,30 +85,31 @@ function updateInit(bidType,current_price){
       init(false)
   }
 }
-// async function changeOrderLevarage() {
-//   try {
-//     const timestamp = Math.floor(Date.now() / 1000);
-//     const bodyParams = {
-//       leverage: 20,
-//     }; 
-//     const signaturePayload = `POST${timestamp}/v2/products/${bitcoin_product_id}/orders/leverage${JSON.stringify(bodyParams)}`;
-//     const signature = await generateEncryptSignature(signaturePayload);
+async function currentBalance() {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signaturePayload = `GET${timestamp}/v2/wallet/balances`;
+    const signature = await generateEncryptSignature(signaturePayload);
 
-//     const headers = {
-//       "api-key": key,
-//       "signature": signature,
-//       "timestamp": timestamp,
-//       "Content-Type": "application/json",
-//       "Accept": "application/json",
-//     }; 
-//     const response = await axios.post(`${api_url}/v2/products/${bitcoin_product_id}/orders/leverage`, bodyParams, { headers });
-//     console.log('changeOrderLevarage____',response.data) 
-//   } catch (error) {
-//     console.log('changeOrderLevarage____error.message___1_',error.response.data)
-//     project_error_message = JSON.stringify(error.response.data)
-//     return { message: error.message, status: false };
-//   }
-// }
+    const headers = {
+      "api-key": key,
+      "signature": signature,
+      "timestamp": timestamp,
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    }; 
+    const response = await axios.get(`${api_url}/v2/wallet/balances`, { headers });
+    //console.log('response____',JSON.parse(response.data.result[0].balance).toFixed(2))
+    return { 
+      data: JSON.parse(response.data.result[0].balance).toFixed(2),
+      status:true
+    }
+  } catch (error) {
+    console.log('get_balance_error_message__',error.response.data)
+    project_error_message = JSON.stringify(error.response.data)
+    return { message: error.message, status: false };
+  }
+}
 async function createOrder(bidType,current_price) {
   // number_of_time_order_executed++;
   // updateInit(bidType,current_price)
@@ -125,8 +127,6 @@ async function createOrder(bidType,current_price) {
       leverage: 100,
       time_in_force: "ioc"
     };
-    console.clear();
-    console.log('bodyParams____',bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
     const signature = await generateEncryptSignature(signaturePayload);
 
@@ -240,7 +240,8 @@ async function triggerOrder(current_price) {
       totalProfit: total_profit.toFixed(2),
       ordersExecuted: number_of_time_order_executed,
       order_exicuted_at_price: order_exicuted_at_price,
-      project_error_message: project_error_message
+      project_error_message: project_error_message,
+      current_balance: current_balance
     })
   }catch(error){
     botRunning = false
@@ -254,6 +255,10 @@ async function getBitcoinPriceLoop() {
     const res = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
     const current_bitcoin_price = parseFloat(res.data?.result?.close);
     await triggerOrder(current_bitcoin_price);
+    balance_response = await currentBalance()
+    if(balance_response.status){ 
+      current_balance = balance_response.data
+    }
   } catch (err) {
     emitter.emit('log', { type: "error", message: err.message });
   }
