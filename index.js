@@ -23,6 +23,7 @@ let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
 let buy_sell_profit_point = 200
+let cancel_gap = 70
 
 let order_exicuted_at_price = 0
 let project_error_message = ""
@@ -201,7 +202,7 @@ async function triggerOrder(current_price) {
       sell_response = null
       order_exicuted_at_price = current_price
     }
-    if (buy_response && current_price <= border_buy_price) { //cancel existing buy order
+    if (buy_response && current_price <= border_buy_price-cancel_gap) { //cancel existing buy order
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
       buy_response = null
@@ -213,7 +214,7 @@ async function triggerOrder(current_price) {
       buy_response = null
       order_exicuted_at_price = current_price
     }
-    if (sell_response && current_price >= border_sell_price) { // cancel existing sell order
+    if (sell_response && current_price >= border_sell_price+cancel_gap) { // cancel existing sell order
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
       sell_response = null;
