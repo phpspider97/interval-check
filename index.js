@@ -114,46 +114,49 @@ async function createOrder(bidType,current_price) {
   // number_of_time_order_executed++;
   // updateInit(bidType,current_price)
   // return true
-  try {
+  
     const cancel = await cancelAllOpenOrder();
     if (!cancel.status) return cancel;
-    const timestamp = Math.floor(Date.now() / 1000);
-    const bodyParams = {
-      product_id: bitcoin_product_id,
-      product_symbol: "BTCUSD",
-      size: current_lot,
-      side: bidType,
-      order_type: "market_order",
-      leverage: 100,
-      time_in_force: "ioc"
-    };
-    const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
-    const signature = await generateEncryptSignature(signaturePayload);
+    if(cancel.status){
+      try {
+        const timestamp = Math.floor(Date.now() / 1000);
+        const bodyParams = {
+          product_id: bitcoin_product_id,
+          product_symbol: "BTCUSD",
+          size: current_lot,
+          side: bidType,
+          order_type: "market_order",
+          leverage: 100,
+          time_in_force: "ioc"
+        };
+        const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
+        const signature = await generateEncryptSignature(signaturePayload);
 
-    const headers = {
-      "api-key": key,
-      "signature": signature,
-      "timestamp": timestamp,
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    };
-    
-    const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
+        const headers = {
+          "api-key": key,
+          "signature": signature,
+          "timestamp": timestamp,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        };
+        
+        const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
 
-    if (response.data.success) {
-      number_of_time_order_executed++;
-      updateInit(bidType,current_price)
-      //await changeOrderLevarage()
-      return { data: response.data, status: true };
-    }
+        if (response.data.success) {
+          number_of_time_order_executed++;
+          updateInit(bidType,current_price)
+          //await changeOrderLevarage()
+          return { data: response.data, status: true };
+        }
 
-    return { message: "Order failed", status: false };
-  } catch (error) {
-    console.log('error.message___2_',error.response.data)
-    project_error_message = JSON.stringify(error.response.data)
-    await cancelAllOpenOrder()
-    botRunning = false
-    return { message: error.message, status: false };
+        return { message: "Order failed", status: false };
+      } catch (error) {
+        console.log('error.message___2_',error.response.data)
+        project_error_message = JSON.stringify(error.response.data)
+        await cancelAllOpenOrder()
+        botRunning = false
+        return { message: error.message, status: false };
+      }
   }
 }
 
@@ -193,19 +196,21 @@ init()
 async function triggerOrder(current_price) {
   try{
     if (!buy_response && current_price > border_buy_price) { //buy order
-      buy_response = await createOrder('buy',current_price)
-      sell_response = null;
+      await createOrder('buy',current_price)
+      buy_response = true
+      sell_response = null
       order_exicuted_at_price = current_price
     }
     if (buy_response && current_price <= border_buy_price) { //cancel existing buy order
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
-      buy_response = null;
+      buy_response = null
     }
 
     if (!sell_response && current_price < border_sell_price) { // sell order
-      sell_response = await createOrder('sell',current_price)
-      buy_response = null;
+      await createOrder('sell',current_price)
+      sell_response = true
+      buy_response = null
       order_exicuted_at_price = current_price
     }
     if (sell_response && current_price >= border_sell_price) { // cancel existing sell order
