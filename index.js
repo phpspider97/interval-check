@@ -76,7 +76,7 @@ async function cancelAllOpenOrder() {
     botRunning = false
     return { message: error.message, status: false };
   }
-}
+} 
 function updateInit(bidType,current_price){
     if(bidType == 'buy' && (current_price-border_buy_price)>50){
         init(false)
