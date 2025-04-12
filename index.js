@@ -289,7 +289,7 @@ emitter.on("stop", () => {
 });
 
 async function startBot() {
-  setInterval(getBitcoinPriceLoop, 1000);
+  setInterval(getBitcoinPriceLoop, 900);
 }
 
 emitter.on("restart", () => {
