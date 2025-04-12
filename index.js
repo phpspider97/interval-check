@@ -28,6 +28,7 @@ let cancel_gap = 70
 let order_exicuted_at_price = 0
 let project_error_message = ""
 let current_balance = 0
+let orderInProgress = false
 
 const api_url = process.env.API_URL 
 const key = process.env.WEB_KEY
@@ -112,10 +113,11 @@ async function currentBalance() {
   }
 }
 async function createOrder(bidType,current_price) {
-  // number_of_time_order_executed++;
-  // updateInit(bidType,current_price)
-  // return true
-  
+    // number_of_time_order_executed++;
+    // updateInit(bidType,current_price)
+    // return true
+    if (orderInProgress) return { message: "Order already in progress", status: false };
+    orderInProgress = true;
     const cancel = await cancelAllOpenOrder();
     if (!cancel.status) return cancel;
     if(cancel.status){
@@ -157,6 +159,8 @@ async function createOrder(bidType,current_price) {
         await cancelAllOpenOrder()
         botRunning = false
         return { message: error.message, status: false };
+      } finally {
+        orderInProgress = false;
       }
   }
 }
@@ -197,10 +201,10 @@ init()
 async function triggerOrder(current_price) {
   try{
     if (!buy_response && current_price > border_buy_price) { //buy order
-      await createOrder('buy',current_price)
       buy_response = true
       sell_response = null
       order_exicuted_at_price = current_price
+      await createOrder('buy',current_price)
     }
     if (buy_response && current_price <= border_buy_price-cancel_gap) { //cancel existing buy order
       const cancel = await cancelAllOpenOrder();
@@ -209,10 +213,10 @@ async function triggerOrder(current_price) {
     }
 
     if (!sell_response && current_price < border_sell_price) { // sell order
-      await createOrder('sell',current_price)
       sell_response = true
       buy_response = null
       order_exicuted_at_price = current_price
+      await createOrder('sell',current_price)
     }
     if (sell_response && current_price >= border_sell_price+cancel_gap) { // cancel existing sell order
       const cancel = await cancelAllOpenOrder();
