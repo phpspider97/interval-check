@@ -6,7 +6,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 60;
+let current_lot = 5;
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -127,7 +127,7 @@ async function createOrder(bidType,current_price) {
           size: current_lot,
           side: bidType,
           order_type: "market_order",
-          leverage: 20,
+          leverage: 25,
           time_in_force: "ioc"
         };
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
