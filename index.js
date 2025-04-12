@@ -127,7 +127,7 @@ async function createOrder(bidType,current_price) {
           size: current_lot,
           side: bidType,
           order_type: "market_order",
-          leverage: 100,
+          leverage: 20,
           time_in_force: "ioc"
         };
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
