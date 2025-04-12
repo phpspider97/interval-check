@@ -22,7 +22,7 @@ let buy_response = null;
 let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
-let buy_sell_profit_point = 125
+let buy_sell_profit_point = 150
 let cancel_gap = 25
 let lot_size_increase = 2
 
