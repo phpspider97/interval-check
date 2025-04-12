@@ -22,7 +22,7 @@ let buy_response = null;
 let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
-let buy_sell_profit_point = 150
+let buy_sell_profit_point = 140
 let cancel_gap = 25
 let lot_size_increase = 2
 
@@ -234,6 +234,7 @@ async function triggerOrder(current_price) {
 
     if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
       total_profit += current_profit; 
+      current_lot = 5
       await init();
     }
 
@@ -288,7 +289,7 @@ emitter.on("stop", () => {
 });
 
 async function startBot() {
-  setInterval(getBitcoinPriceLoop, 1000);
+  setInterval(getBitcoinPriceLoop, 600);
 }
 
 emitter.on("restart", () => {
