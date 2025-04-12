@@ -22,8 +22,8 @@ let buy_response = null;
 let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
-let buy_sell_profit_point = 125
-let cancel_gap = 25
+let buy_sell_profit_point = 115
+let cancel_gap = 0
 let lot_size_increase = 2
 
 let order_exicuted_at_price = 0
@@ -213,7 +213,7 @@ async function triggerOrder(current_price) {
       current_lot = 5
       await init();
     }
-    
+
     if (!buy_response && current_price > border_buy_price) { //buy order
       buy_response = true
       sell_response = null
