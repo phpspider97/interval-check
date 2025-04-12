@@ -282,7 +282,7 @@ async function getBitcoinPriceLoop() {
     emitter.emit('log', { type: "error", message: err.message });
   }
 }
-
+ 
 emitter.on("stop", () => {
   botRunning = false; 
   emitter.emit("log", { type: "warn", message: "Bot has been stopped." });
