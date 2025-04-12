@@ -283,7 +283,7 @@
     
         updatePrice(data.price) 
         drawBox()
-        if(data.order_exicuted_at_price>0 && data.order_exicuted_at_price != undefined && ( parseInt(data.price)>parseInt(data.border_buy_price)-50 || parseInt(data.price)<parseInt(data.border_sell_price)+50 ) ){
+        if(data.order_exicuted_at_price>0 && data.order_exicuted_at_price != undefined && ( parseInt(data.price)>parseInt(data.border_buy_price) || parseInt(data.price)<parseInt(data.border_sell_price) ) ){
             drawBoxLastOrderPrice(data.order_exicuted_at_price)
         }else{
             drawBoxLastOrderPrice(data.border_price)

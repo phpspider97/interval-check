@@ -23,7 +23,7 @@ let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
 let buy_sell_profit_point = 100
-let cancel_gap = 50
+let cancel_gap = 0
 
 let order_exicuted_at_price = 0
 let project_error_message = ""
