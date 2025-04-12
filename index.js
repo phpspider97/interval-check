@@ -149,6 +149,7 @@ async function createOrder(bidType,current_price) {
 
         if (response.data.success) {
           number_of_time_order_executed++;
+          current_lot *= lot_size_increase
           updateInit(bidType,current_price)
           //await changeOrderLevarage()
           return { data: response.data, status: true };
@@ -206,6 +207,13 @@ async function triggerOrder(current_price) {
     current_lot = 5
   }
   try{
+
+    if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
+      total_profit += current_profit; 
+      current_lot = 5
+      await init();
+    }
+    
     if (!buy_response && current_price > border_buy_price) { //buy order
       buy_response = true
       sell_response = null
@@ -214,7 +222,6 @@ async function triggerOrder(current_price) {
     }
     if (buy_response && current_price <= border_buy_price-cancel_gap) { //cancel existing buy order
       buy_response = null
-      current_lot *= lot_size_increase
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
     }
@@ -226,16 +233,9 @@ async function triggerOrder(current_price) {
       await createOrder('sell',current_price)
     }
     if (sell_response && current_price >= border_sell_price+cancel_gap) { // cancel existing sell order
-      sell_response = null;
-      current_lot *= lot_size_increase
+      sell_response = null; 
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
-    }
-
-    if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
-      total_profit += current_profit; 
-      current_lot = 5
-      await init();
     }
 
     // Calculate current profit
