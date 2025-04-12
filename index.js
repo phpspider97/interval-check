@@ -56,7 +56,7 @@ async function cancelAllOpenOrder() {
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
       close_all_portfolio: true,
-      //close_all_isolated: true,
+      close_all_isolated: true,
       user_id: process.env.WEB_USER_ID,
     }; 
     const signaturePayload = `POST${timestamp}/v2/positions/close_all${JSON.stringify(bodyParams)}`;
