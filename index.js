@@ -22,8 +22,8 @@ let buy_response = null;
 let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
-let buy_sell_profit_point = 100
-let cancel_gap = 100
+let buy_sell_profit_point = 200
+let cancel_gap = 25
 let lot_size_increase = 2
 
 let order_exicuted_at_price = 0
@@ -143,7 +143,7 @@ async function createOrder(bidType,current_price) {
           "Content-Type": "application/json",
           "Accept": "application/json",
         };
-        console.log('order___added___')
+        console.log('order___added___',current_lot)
         const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
 
         if (response.data.success) {
@@ -216,7 +216,7 @@ async function triggerOrder(current_price) {
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
       buy_response = null
-      current_lot = current_lot*lot_size_increase
+      current_lot *= lot_size_increase
     }
 
     if (!sell_response && current_price < border_sell_price) { // sell order
@@ -229,7 +229,7 @@ async function triggerOrder(current_price) {
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
       sell_response = null;
-      current_lot = current_lot*lot_size_increase
+      current_lot *= lot_size_increase
     }
 
     if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
