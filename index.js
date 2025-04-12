@@ -140,7 +140,7 @@ async function createOrder(bidType,current_price) {
           "Content-Type": "application/json",
           "Accept": "application/json",
         };
-        
+        console.log('order___added___')
         const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
 
         if (response.data.success) {
