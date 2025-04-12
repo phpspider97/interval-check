@@ -6,7 +6,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 20;
+let current_lot = 1;
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -23,8 +23,8 @@ let sell_response = null;
 let botRunning = true;
 let buy_sell_point = 50
 let buy_sell_profit_point = 100
-let cancel_gap = 20
-let lot_size_increase = 20
+let cancel_gap = 100
+let lot_size_increase = 2
 
 let order_exicuted_at_price = 0
 let project_error_message = ""
@@ -194,7 +194,7 @@ async function init(is_cancle_open_order=true) {
   border_sell_profit_price = border_sell_price - buy_sell_profit_point;
 
   order_exicuted_at_price = 0 
-  current_lot = 20
+  current_lot = 1
 
   emitter.emit('log', { type: "init", markPrice });
 }
@@ -212,7 +212,7 @@ async function triggerOrder(current_price) {
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
       buy_response = null
-      current_lot = current_lot+lot_size_increase
+      current_lot = current_lot*lot_size_increase
     }
 
     if (!sell_response && current_price < border_sell_price) { // sell order
@@ -225,7 +225,7 @@ async function triggerOrder(current_price) {
       const cancel = await cancelAllOpenOrder();
       if (!cancel.status) return cancel;
       sell_response = null;
-      current_lot = current_lot+lot_size_increase
+      current_lot = current_lot*lot_size_increase
     }
 
     if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
