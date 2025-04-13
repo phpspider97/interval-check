@@ -123,7 +123,7 @@ async function createOrder(bidType,current_price) {
     //const cancel = await cancelAllOpenOrder();
     //if (!cancel.status) return cancel;
     
-    if(cancel.status){
+    //if(cancel.status){
       try {
         const timestamp = Math.floor(Date.now() / 1000);
         const bodyParams = {
@@ -166,7 +166,7 @@ async function createOrder(bidType,current_price) {
       } finally {
         orderInProgress = false;
       }
-  }
+ // }
 }
 
 async function getCurrentPriceOfBitcoin() {
