@@ -6,7 +6,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 5
+let current_lot = 10
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -21,9 +21,9 @@ let border_sell_profit_price;
 let buy_response = null;
 let sell_response = null;
 let botRunning = true;
-let buy_sell_point = 50
-let buy_sell_profit_point = 125
-let cancel_gap = 100
+let buy_sell_point = 75
+let buy_sell_profit_point = 300
+let cancel_gap = 150
 let lot_size_increase = 2
 
 let order_exicuted_at_price = 0
@@ -36,7 +36,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET
 
 function resetBot() {
-  current_lot = 5;
+  current_lot = 10;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -120,15 +120,8 @@ async function createOrder(bidType,current_price) {
     // return true
     if (orderInProgress) return { message: "Order already in progress", status: false };
     orderInProgress = true;
-    const cancel = await cancelAllOpenOrder();
-    if (!cancel.status) return cancel;
-    let addition_lot = 0
-    if(current_lot == 10){
-      addition_lot = 10
-    } 
-    if(current_lot == 20){
-      addition_lot = 40
-    }
+    //const cancel = await cancelAllOpenOrder();
+    //if (!cancel.status) return cancel;
     
     if(cancel.status){
       try {
@@ -136,7 +129,7 @@ async function createOrder(bidType,current_price) {
         const bodyParams = {
           product_id: bitcoin_product_id,
           product_symbol: "BTCUSD",
-          size: current_lot + addition_lot,
+          size: current_lot,
           side: bidType,
           order_type: "market_order",
           // leverage: 25,
@@ -204,21 +197,21 @@ async function init(is_cancle_open_order=true) {
   border_sell_profit_price = border_sell_price - buy_sell_profit_point;
 
   order_exicuted_at_price = 0 
-  //current_lot = 5
+  //current_lot = 10
 
   emitter.emit('log', { type: "init", markPrice });
 }
 init()
 
 async function triggerOrder(current_price) {
-  if(current_lot>20){
-    current_lot = 5
-  }
+  // if(current_lot>20){
+  //   current_lot = 10
+  // }
   try{
 
     if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
       total_profit += current_profit; 
-      current_lot = 5
+      current_lot = 10
       await init();
     }
 
@@ -230,8 +223,8 @@ async function triggerOrder(current_price) {
     }
     if (buy_response && current_price <= border_buy_price-cancel_gap) { //cancel existing buy order
       buy_response = null
-      const cancel = await cancelAllOpenOrder();
-      if (!cancel.status) return cancel;
+      //const cancel = await cancelAllOpenOrder();
+      //if (!cancel.status) return cancel;
     }
 
     if (!sell_response && current_price < border_sell_price) { // sell order
@@ -242,8 +235,8 @@ async function triggerOrder(current_price) {
     }
     if (sell_response && current_price >= border_sell_price+cancel_gap) { // cancel existing sell order
       sell_response = null; 
-      const cancel = await cancelAllOpenOrder();
-      if (!cancel.status) return cancel;
+      //const cancel = await cancelAllOpenOrder();
+      //if (!cancel.status) return cancel;
     }
 
     // Calculate current profit
