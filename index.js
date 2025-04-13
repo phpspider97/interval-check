@@ -21,9 +21,9 @@ let border_sell_profit_price;
 let buy_response = null;
 let sell_response = null;
 let botRunning = true;
-let buy_sell_point = 75
-let buy_sell_profit_point = 300
-let cancel_gap = 150
+let buy_sell_point = 125
+let buy_sell_profit_point = 500
+let cancel_gap = 250
 let lot_size_increase = 2
 
 let order_exicuted_at_price = 0
@@ -204,7 +204,7 @@ async function init(is_cancle_open_order=true) {
 init()
 
 async function triggerOrder(current_price) {
-  if(current_lot>320){
+  if(current_lot>160){
     current_lot = 10
   }
   try{
