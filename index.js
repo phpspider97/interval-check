@@ -204,9 +204,9 @@ async function init(is_cancle_open_order=true) {
 init()
 
 async function triggerOrder(current_price) {
-  // if(current_lot>20){
-  //   current_lot = 10
-  // }
+  if(current_lot>320){
+    current_lot = 10
+  }
   try{
 
     if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
