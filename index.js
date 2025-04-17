@@ -57,7 +57,7 @@ function resetBot() {
   init();
 }
 
-let reconnectInterval = 5000;
+let reconnectInterval = 2000;
 function wsConnect() {
   // Replace with your actual API credentials
   const WEBSOCKET_URL = socket_url;
@@ -297,7 +297,7 @@ async function createBracketOrder(bidType,current_price){
           } 
       }
       return {
-              message:"Some issue to get bitcoin current price.",
+              message: JSON.stringify(data),
               status : false
           }
   } catch (error) {
@@ -309,7 +309,7 @@ async function createBracketOrder(bidType,current_price){
   }
 }
 
-async function createOrder(bidType,current_price) {
+async function createOrder(bidType,bitcoin_current_price) {
   //return true
       if (orderInProgress) return { message: "Order already in progress", status: false };
       orderInProgress = true
@@ -334,7 +334,7 @@ async function createOrder(bidType,current_price) {
           // bracket_take_profit_limit_price: (bidType == 'buy')?border_buy_profit_price-5:border_sell_profit_price+5,
           // bracket_take_profit_price: (bidType == 'buy')?border_buy_profit_price:border_sell_profit_price,
         };
-       // console.log('order_bodyParams___',bodyParams)
+        console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
         const signature = await generateEncryptSignature(signaturePayload);
 
@@ -359,8 +359,9 @@ async function createOrder(bidType,current_price) {
       } catch (error) {
         console.log('error.message___2_',JSON.stringify(error?.response?.data))
         project_error_message = JSON.stringify(error?.response?.data)
-        await triggerLimitOrderOnBothSide()
-        botRunning = false
+        orderInProgress = false;
+        await triggerLimitOrderOnBothSide(bitcoin_current_price)
+        //botRunning = false
         return { message: error?.message, status: false };
       } finally {
         orderInProgress = false;
@@ -377,13 +378,13 @@ async function getCurrentPriceOfBitcoin() {
   }
 }
 
-async function triggerLimitOrderOnBothSide(){
+async function triggerLimitOrderOnBothSide(bitcoin_current_price=0){
   try{
     const cancle_response = await cancelAllOpenOrder()
     if(cancle_response.status){
-      const sell_order_response = await createOrder('sell')
+      const sell_order_response = await createOrder('sell',bitcoin_current_price)
       if(sell_order_response.status){
-        await createOrder('buy')
+        await createOrder('buy',bitcoin_current_price)
       }
     }
   }catch(error){
@@ -413,7 +414,7 @@ async function init(is_cancle_open_order=true) {
   //buy_bracket_response = false
   //sell_bracket_response = false
 
-  await triggerLimitOrderOnBothSide()
+  await triggerLimitOrderOnBothSide(markPrice)
   //await createBracketOrder('buy')
   emitter.emit('log', { type: "init", markPrice });
 }
