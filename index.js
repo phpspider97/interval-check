@@ -24,9 +24,9 @@ let sell_response = null;
 let buy_bracket_response = null;
 let sell_bracket_response = null;
 let botRunning = true;
-let buy_sell_point = 70
+let buy_sell_point = 50
 let buy_sell_profit_point = 100
-let cancel_gap = 40
+let cancel_gap = 50
 let lot_size_increase = 2
 let slippage = 50
 
@@ -112,7 +112,7 @@ function wsConnect() {
           }else{
             console.log(`============= BRACKET ORDER : Loss (${message.meta_data.pnl}) from bracket order ============= `)
             current_lot *= lot_size_increase 
-            await triggerLimitOrderOnBothSide()
+            await init() 
           }
         }
         //console.log('Received message:', JSON.stringify(message));
@@ -410,8 +410,8 @@ async function init(is_cancle_open_order=true) {
 
   order_exicuted_at_price = 0 
   //current_lot = 1 
-  buy_bracket_response = false
-  sell_bracket_response = false
+  //buy_bracket_response = false
+  //sell_bracket_response = false
 
   await triggerLimitOrderOnBothSide()
   //await createBracketOrder('buy')
