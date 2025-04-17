@@ -24,11 +24,12 @@ let sell_response = null;
 let buy_bracket_response = null;
 let sell_bracket_response = null;
 let botRunning = true;
-let buy_sell_point = 50
-let buy_sell_profit_point = 100
-let cancel_gap = 50
+let buy_sell_point = 100
+let buy_sell_profit_point = 200
+let cancel_gap = 190
 let lot_size_increase = 2
 let slippage = 50
+let total_error_count = 0
 
 let order_exicuted_at_price = 0
 let project_error_message = ""
@@ -36,6 +37,7 @@ let current_balance = 0
 let orderInProgress = false 
 let create_buy_order_again = false
 let create_sell_order_again = false
+const openOrders = [];
 
 const api_url = process.env.API_URL 
 const socket_url = process.env.API_URL_SOCKET 
@@ -91,9 +93,20 @@ function wsConnect() {
     // Subscribe to private channels after successful authentication
     if (message.type === 'success' && message.message === 'Authenticated') {
       subscribe(ws, 'orders', ['all']);
+      subscribe(ws, 'v2/ticker', ['BTCUSD']);
       //subscribe(ws, 'positions', ['all']);
     } else {
-      //console.log('message____',message) 
+      
+      if(message.type == "v2/ticker"){
+        if(message?.close){
+            if (message?.close > border_buy_profit_price || message?.close < border_sell_profit_price) { 
+              current_lot = 1 
+              await init();
+            }
+        }
+        //console.log('message___',message?.close)
+      }
+ 
       if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
         console.log(`============= ORDER : ${message.side} order trigger ============= `)
         const bracket_response = await createBracketOrder(message.side)
@@ -261,15 +274,15 @@ async function createBracketOrder(bidType,current_price){
       const bodyParams = {
           "product_id": bitcoin_product_id,
           "product_symbol": "BTCUSD",
+          "take_profit_order": {
+            "order_type": "limit_order",
+            "stop_price": (bidType == 'buy' ? border_buy_profit_price-buy_sell_point : border_sell_profit_price+buy_sell_point).toString(),
+            "limit_price": (bidType == 'buy' ? border_buy_profit_price : border_sell_profit_price).toString()
+          },
           "stop_loss_order": {
               "order_type": "limit_order",
-              "stop_price": (bidType == 'buy' ? border_buy_price-cancel_gap : border_sell_price+cancel_gap).toString(),
-              "limit_price": (bidType == 'buy' ? border_buy_price-cancel_gap+5 : border_sell_price+cancel_gap-5).toString()
-          },
-          "take_profit_order": {
-              "order_type": "limit_order",
-              "stop_price": (bidType == 'buy' ? border_buy_profit_price : border_sell_profit_price).toString(),
-              "limit_price": (bidType == 'buy' ? border_buy_profit_price+5 : border_sell_profit_price-5).toString()
+              "stop_price": (bidType == 'buy' ? border_buy_price-buy_sell_point : border_sell_price+buy_sell_point).toString(),
+              "limit_price": (bidType == 'buy' ? border_buy_price-cancel_gap : border_sell_price+cancel_gap).toString()
           },
           "bracket_stop_trigger_method": "last_traded_price"
       } 
@@ -296,11 +309,13 @@ async function createBracketOrder(bidType,current_price){
               status : true
           } 
       }
+      total_error_count++
       return {
               message: JSON.stringify(data),
               status : false
           }
   } catch (error) {
+    total_error_count++
     //console.log('bodyParams_bracket_order_error__',error.message)
     return {
         message: error.message,
@@ -323,9 +338,9 @@ async function createOrder(bidType,bitcoin_current_price) {
           side: bidType, 
           order_type: "limit_order",
           stop_order_type: "stop_loss_order",
-          stop_price: (bidType == 'buy')?border_buy_price-5:border_sell_price+5, 
+          stop_price: (bidType == 'buy')?border_buy_price-buy_sell_point/2:border_sell_price+buy_sell_point/2, 
           limit_price: (bidType == 'buy')?border_buy_price:border_sell_price,
-          post_only: false,
+          post_only: true,
           time_in_force: 'gtc',
           stop_trigger_method: "last_traded_price",
           //reduce_only:true
@@ -334,7 +349,7 @@ async function createOrder(bidType,bitcoin_current_price) {
           // bracket_take_profit_limit_price: (bidType == 'buy')?border_buy_profit_price-5:border_sell_profit_price+5,
           // bracket_take_profit_price: (bidType == 'buy')?border_buy_profit_price:border_sell_profit_price,
         };
-        console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
+        //console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
         const signature = await generateEncryptSignature(signaturePayload);
 
@@ -358,6 +373,7 @@ async function createOrder(bidType,bitcoin_current_price) {
         return { message: "Order failed", status: false };
       } catch (error) {
         console.log('error.message___2_',JSON.stringify(error?.response?.data))
+        total_error_count++
         project_error_message = JSON.stringify(error?.response?.data)
         orderInProgress = false;
         await triggerLimitOrderOnBothSide(bitcoin_current_price)
@@ -410,6 +426,7 @@ async function init(is_cancle_open_order=true) {
   border_sell_profit_price = border_sell_price - buy_sell_profit_point;
 
   order_exicuted_at_price = 0 
+  total_error_count = 0
   //current_lot = 1 
   //buy_bracket_response = false
   //sell_bracket_response = false
@@ -505,6 +522,7 @@ async function triggerOrder(current_price,openPosition) {
 }
 
 async function getBitcoinPriceLoop() { 
+  if(total_error_count>10) return
   if (!botRunning) return;
   try { 
     const res = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
