@@ -89,7 +89,7 @@ function wsConnect() {
   
   async function onMessage(data) {
     const message = JSON.parse(data);
-
+    if(total_error_count>10) return
     // Subscribe to private channels after successful authentication
     if (message.type === 'success' && message.message === 'Authenticated') {
       subscribe(ws, 'orders', ['all']);
