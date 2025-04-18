@@ -89,7 +89,9 @@ function wsConnect() {
   
   async function onMessage(data) {
     const message = JSON.parse(data);
+    //console.log('total_error_count_start_',total_error_count)
     if(total_error_count>10) return
+    //console.log('total_error_count_end_',total_error_count)
     // Subscribe to private channels after successful authentication
     if (message.type === 'success' && message.message === 'Authenticated') {
       subscribe(ws, 'orders', ['all']);
@@ -100,11 +102,10 @@ function wsConnect() {
       if(message.type == "v2/ticker"){
         if(message?.close){
             if (message?.close > border_buy_profit_price || message?.close < border_sell_profit_price) { 
-              current_lot = 1 
-              await init();
+              await resetLoop(1)
             }
         }
-        //console.log('message___',message?.close)
+        //console.log('message___',message?.close,message?.bracket_order )
       }
  
       if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
@@ -112,20 +113,18 @@ function wsConnect() {
         const bracket_response = await createBracketOrder(message.side)
         console.log('bracket_response___',bracket_response)
         if(!bracket_response.status){
-          current_lot = 1 
-          await init()
+          await resetLoop(1)
         }
       }
       if(message?.bracket_order == true){
         if(message.meta_data.pnl != undefined){ 
           if(parseFloat(message.meta_data.pnl)>0){
             console.log(`============= BRACKET ORDER : Profit (${message.meta_data.pnl}) from bracket order ============= `)
-            current_lot = 1 
-            await init() 
+            await resetLoop(1)
           }else{
             console.log(`============= BRACKET ORDER : Loss (${message.meta_data.pnl}) from bracket order ============= `)
             current_lot *= lot_size_increase 
-            await init() 
+            await resetLoop(current_lot) 
           }
         }
         //console.log('Received message:', JSON.stringify(message));
@@ -136,7 +135,10 @@ function wsConnect() {
     await cancelAllOpenOrder()
     console.error('Socket Error:', error.message);
   }
-  
+  async function resetLoop(lot_size){
+    current_lot = lot_size
+    await init()
+  }
   function onClose(code, reason) {
     console.log(`Socket closed with code: ${code}, reason: ${reason}`);
     setTimeout(() => {
