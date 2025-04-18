@@ -18,7 +18,7 @@ let border_buy_profit_price;
 
 let border_sell_price;
 let border_sell_profit_price;
- 
+  
 let buy_response = null;
 let sell_response = null;
 let buy_bracket_response = null;
