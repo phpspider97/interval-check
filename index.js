@@ -107,7 +107,7 @@ function wsConnect() {
         }
         //console.log('message___',message?.close,message?.bracket_order )
       }
- 
+  
       if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
         console.log(`============= ORDER : ${message.side} order trigger ============= `)
         const bracket_response = await createBracketOrder(message.side)
