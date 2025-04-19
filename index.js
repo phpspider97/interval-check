@@ -342,7 +342,7 @@ async function createOrder(bidType,bitcoin_current_price) {
           stop_order_type: "stop_loss_order", 
           stop_price: (bidType == 'buy')?border_buy_price-buy_sell_point/5:border_sell_price+buy_sell_point/5, 
           limit_price: (bidType == 'buy')?border_buy_price:border_sell_price,
-          post_only: true,
+          post_only: false,
           time_in_force: 'gtc',
           stop_trigger_method: "last_traded_price",
           //reduce_only:true
