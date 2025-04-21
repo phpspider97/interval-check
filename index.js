@@ -333,7 +333,7 @@ async function createOrder(bidType,bitcoin_current_price) {
           // bracket_take_profit_limit_price: (bidType == 'buy')?border_buy_profit_price-5:border_sell_profit_price+5,
           // bracket_take_profit_price: (bidType == 'buy')?border_buy_profit_price:border_sell_profit_price,
         };
-        console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
+        //console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
         const signature = await generateEncryptSignature(signaturePayload);
 
