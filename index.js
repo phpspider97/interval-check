@@ -18,26 +18,18 @@ let border_buy_profit_price;
 
 let border_sell_price;
 let border_sell_profit_price;
-  
-let buy_response = null;
-let sell_response = null;
-let buy_bracket_response = null;
-let sell_bracket_response = null;
+   
 let botRunning = true;
-let buy_sell_point = 100
-let buy_sell_profit_point = 200
-let cancel_gap = 190
+let buy_sell_profit_point = 100
+let buy_sell_point = 50
+let cancel_gap = 70
 let lot_size_increase = 2
-let slippage = 50
 let total_error_count = 0
 
 let order_exicuted_at_price = 0
 let project_error_message = ""
 let current_balance = 0
-let orderInProgress = false 
-let create_buy_order_again = false
-let create_sell_order_again = false
-const openOrders = [];
+let orderInProgress = false  
 
 const api_url = process.env.API_URL 
 const socket_url = process.env.API_URL_SOCKET 
@@ -88,11 +80,8 @@ function wsConnect() {
   }
   
   async function onMessage(data) {
-    const message = JSON.parse(data);
-    //console.log('total_error_count_start_',total_error_count)
-    if(total_error_count>10) return
-    //console.log('total_error_count_end_',total_error_count)
-    // Subscribe to private channels after successful authentication
+    const message = JSON.parse(data); 
+    if(total_error_count>10) return 
     if (message.type === 'success' && message.message === 'Authenticated') {
       subscribe(ws, 'orders', ['all']);
       subscribe(ws, 'v2/ticker', ['BTCUSD']);
@@ -100,12 +89,12 @@ function wsConnect() {
     } else {
       
       if(message.type == "v2/ticker"){
-        if(message?.close){
-            if (message?.close > border_buy_profit_price || message?.close < border_sell_profit_price) { 
+        if(message?.mark_price){
+            if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) { 
               await resetLoop(1)
             }
-        }
-        //console.log('message___',message?.close,message?.bracket_order )
+            await triggerOrder(message?.mark_price)
+        } 
       }
   
       if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
@@ -210,14 +199,7 @@ async function cancelAllOpenOrder() {
     return { message: error.message, status: false };
   }
 } 
-function updateInit(bidType,current_price){
-    if(bidType == 'buy' && (current_price-border_buy_price)>50){
-        init(false)
-    }
-    if(bidType == 'sell' && (border_sell_price-current_price)>50){
-      init(false)
-  }
-}
+ 
 async function currentBalance() {
   try {
     const timestamp = Math.floor(Date.now() / 1000);
@@ -278,12 +260,12 @@ async function createBracketOrder(bidType,current_price){
           "product_symbol": "BTCUSD",
           "take_profit_order": {
             "order_type": "limit_order",
-            "stop_price": (bidType == 'buy' ? border_buy_profit_price-buy_sell_point : border_sell_profit_price+buy_sell_point).toString(),
+            "stop_price": (bidType == 'buy' ? border_buy_profit_price-buy_sell_point/2 : border_sell_profit_price+buy_sell_point/2).toString(),
             "limit_price": (bidType == 'buy' ? border_buy_profit_price : border_sell_profit_price).toString()
           },
           "stop_loss_order": {
               "order_type": "limit_order",
-              "stop_price": (bidType == 'buy' ? border_buy_price-buy_sell_point : border_sell_price+buy_sell_point).toString(),
+              "stop_price": (bidType == 'buy' ? border_buy_price-buy_sell_point/2 : border_sell_price+buy_sell_point/2).toString(),
               "limit_price": (bidType == 'buy' ? border_buy_price-cancel_gap : border_sell_price+cancel_gap).toString()
           },
           "bracket_stop_trigger_method": "last_traded_price"
@@ -340,7 +322,7 @@ async function createOrder(bidType,bitcoin_current_price) {
           side: bidType, 
           order_type: "limit_order",
           stop_order_type: "stop_loss_order", 
-          stop_price: (bidType == 'buy')?border_buy_price-buy_sell_point/5:border_sell_price+buy_sell_point/5, 
+          stop_price: (bidType == 'buy')?border_buy_price-buy_sell_point/2:border_sell_price+buy_sell_point/2, 
           limit_price: (bidType == 'buy')?border_buy_price:border_sell_price,
           post_only: false,
           time_in_force: 'gtc',
@@ -363,12 +345,9 @@ async function createOrder(bidType,bitcoin_current_price) {
           "Accept": "application/json",
         };
         const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
-        //console.log('order_response_',JSON.stringify(response.data))
-        //console.log('order_added___')
+         
         if (response.data.success) {
-          number_of_time_order_executed++;
-          //updateInit(bidType,current_price)
-          //await changeOrderLevarage()
+          number_of_time_order_executed++; 
           return { data: response.data, status: true };
         }
 
@@ -385,17 +364,7 @@ async function createOrder(bidType,bitcoin_current_price) {
         orderInProgress = false;
       }
 }
-
-async function getCurrentPriceOfBitcoin() {
-  try {
-    const response = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
-    //console.log('response___',response)
-    return { data: response.data, status: true };
-  } catch (error) {
-    return { message: error.message, status: false };
-  }
-}
-
+ 
 async function triggerLimitOrderOnBothSide(bitcoin_current_price=0){
   try{
     const cancle_response = await cancelAllOpenOrder()
@@ -409,15 +378,21 @@ async function triggerLimitOrderOnBothSide(bitcoin_current_price=0){
     await cancelAllOpenOrder()
   }
 }
-async function init(is_cancle_open_order=true) {
-  //return true
-  if(is_cancle_open_order){
-    //await cancelAllOpenOrder()
+
+async function getCurrentPriceOfBitcoin() {
+  try {
+    const response = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
+    return { data: response.data, status: true };
+  } catch (error) {
+    return { message: error.message, status: false };
   }
+}
+
+async function init() {
   const result = await getCurrentPriceOfBitcoin();
   if (!result.status) return;
 
-  const markPrice = Math.round(result.data.result.close);
+  const markPrice = Math.round(result.data.result.mark_price);
   bitcoin_product_id = result.data.result.product_id;
   border_price = markPrice;
 
@@ -428,71 +403,14 @@ async function init(is_cancle_open_order=true) {
   border_sell_profit_price = border_sell_price - buy_sell_profit_point;
 
   order_exicuted_at_price = 0 
-  total_error_count = 0
-  //current_lot = 1 
-  //buy_bracket_response = false
-  //sell_bracket_response = false
+  total_error_count = 0 
 
-  await triggerLimitOrderOnBothSide(markPrice)
-  //await createBracketOrder('buy')
+  await triggerLimitOrderOnBothSide(markPrice) 
   emitter.emit('log', { type: "init", markPrice });
 }
-init()
 
 async function triggerOrder(current_price,openPosition) {
-  //console.log('openPosition____',openPosition)
-  //return true
   try{
-    // if (current_price > border_buy_profit_price || current_price < border_sell_profit_price) { // exit when acheive target
-    //   total_profit += current_profit; 
-    //   current_lot = 1
-    //   current_lot *= lot_size_increase
-    //   await init();
-    // }
- 
-    //console.log('1_____',openPosition.result.entry_price, openPosition.result.size)
-    // if(!create_buy_order_again && buy_bracket_response && openPosition.result.entry_price == null){
-    //   create_buy_order_again = true
-    //   current_lot = 1
-    //   await init();
-    // }
-
-    // if (!buy_bracket_response && openPosition.result.entry_price != null && openPosition.result.size > 0) {
-    //   try{
-    //     buy_bracket_response = true
-    //     sell_bracket_response = false 
-    //     console.log('buy___bracket')
-    //     const response = await createBracketOrder('buy',current_price)
-    //     if(!response.status){
-    //       buy_bracket_response = false 
-    //     }
-    //   }catch(error){
-    //     buy_bracket_response = false 
-    //   }
-    // }
-
-    // if(!create_sell_order_again && sell_bracket_response && openPosition.result.entry_price == null){
-    //   create_sell_order_again = true
-    //   current_lot = 1
-    //   await init();
-    // }
-    // if (!sell_bracket_response && openPosition.result.entry_price != null && openPosition.result.size < 0) {
-    //   try{
-    //     sell_bracket_response = true
-    //     buy_bracket_response = false
-    //     create_buy_order_again = false
-    //     create_sell_order_again = false 
-    //     console.log('sell___bracket')
-    //     const response = await createBracketOrder('sell',current_price)
-    //     console.log('response___',response)
-    //     if(!response.status){
-    //       sell_bracket_response = false 
-    //     }
-    //   }catch(error){
-    //     sell_bracket_response = false 
-    //   }
-    // }
-
     // Calculate current profit
     if (current_price > border_buy_price) {
       current_profit = ((current_price - border_buy_price) / 1000) * current_lot;
@@ -523,25 +441,20 @@ async function triggerOrder(current_price,openPosition) {
   }
 }
 
-async function getBitcoinPriceLoop() { 
-  if(total_error_count>10) return
-  if (!botRunning) return;
-  try { 
-    const res = await axios.get(`${api_url}/v2/tickers/BTCUSD`);
-    const current_bitcoin_price = parseFloat(res.data?.result?.close);
-    //const openPosition = await currentOpenPosition()
-    //if(openPosition.status){
-      await triggerOrder(current_bitcoin_price)
-    //}
-    // balance_response = await currentBalance()
-    // if(balance_response.status){ 
-    //   current_balance = balance_response.data
-    // }
-    current_balance = 0
-  } catch (err) {
-    emitter.emit('log', { type: "error", message: err.message });
-  }
-}
+// async function getBitcoinPriceLoop() { 
+//   if(total_error_count>10) return
+//   if (!botRunning) return
+//   try {  
+//     const result = await getCurrentPriceOfBitcoin()
+//     if (!result.status) return
+//     const current_bitcoin_price = Math.round(result.data.result.mark_price)
+
+//     await triggerOrder(current_bitcoin_price)
+    
+//   } catch (err) {
+//     emitter.emit('log', { type: "error", message: err.message });
+//   }
+// }
  
 emitter.on("stop", () => {
   botRunning = false; 
@@ -549,7 +462,8 @@ emitter.on("stop", () => {
 });
 
 async function startBot() {
-  setInterval(getBitcoinPriceLoop, 1000);
+  //setInterval(getBitcoinPriceLoop, 1000);
+  init()
 }
 
 emitter.on("restart", () => {
