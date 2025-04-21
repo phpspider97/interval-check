@@ -89,11 +89,11 @@ function wsConnect() {
     } else {
       
       if(message.type == "v2/ticker"){
-        if(message?.mark_price){
-            if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) { 
+        if(message?.close){
+            if (message?.close > border_buy_profit_price || message?.close < border_sell_profit_price) { 
               await resetLoop(1)
             }
-            await triggerOrder(message?.mark_price)
+            await triggerOrder(message?.close)
         } 
       }
   
@@ -324,7 +324,7 @@ async function createOrder(bidType,bitcoin_current_price) {
           stop_order_type: "stop_loss_order", 
           stop_price: (bidType == 'buy')?border_buy_price-buy_sell_point/2:border_sell_price+buy_sell_point/2, 
           limit_price: (bidType == 'buy')?border_buy_price:border_sell_price,
-          post_only: false,
+          post_only: true,
           time_in_force: 'gtc',
           stop_trigger_method: "last_traded_price",
           //reduce_only:true
@@ -333,7 +333,7 @@ async function createOrder(bidType,bitcoin_current_price) {
           // bracket_take_profit_limit_price: (bidType == 'buy')?border_buy_profit_price-5:border_sell_profit_price+5,
           // bracket_take_profit_price: (bidType == 'buy')?border_buy_profit_price:border_sell_profit_price,
         };
-        //console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
+        console.log('order_bodyParams___',bitcoin_current_price,bodyParams)
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
         const signature = await generateEncryptSignature(signaturePayload);
 
@@ -392,7 +392,7 @@ async function init() {
   const result = await getCurrentPriceOfBitcoin();
   if (!result.status) return;
 
-  const markPrice = Math.round(result.data.result.mark_price);
+  const markPrice = Math.round(result.data.result.close);
   bitcoin_product_id = result.data.result.product_id;
   border_price = markPrice;
 
@@ -447,7 +447,7 @@ async function triggerOrder(current_price,openPosition) {
 //   try {  
 //     const result = await getCurrentPriceOfBitcoin()
 //     if (!result.status) return
-//     const current_bitcoin_price = Math.round(result.data.result.mark_price)
+//     const current_bitcoin_price = Math.round(result.data.result.close)
 
 //     await triggerOrder(current_bitcoin_price)
     
