@@ -39,7 +39,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 1;
+  current_lot = 10;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
