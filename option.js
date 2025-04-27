@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 10
+let current_lot = 5
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -39,7 +39,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 10;
+  current_lot = 5;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
