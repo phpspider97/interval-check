@@ -99,7 +99,7 @@ function wsConnect() {
 
         if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
           console.log(`============= ORDER : ${message.side} order trigger ============= `)
-          current_running_order = message.side
+          //current_running_order = message.side
         }
 
         if(message.type == "v2/ticker"){ 
@@ -313,6 +313,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
               product.contract_type == 'put_options' && product.strike_price == border_sell_price
           );
       }else if(data_type == 'current'){
+            current_running_order = 'sell'
           option_data = allProducts.filter(product =>
           product.contract_type == 'put_options' && product.strike_price == spot_price-200
           );
