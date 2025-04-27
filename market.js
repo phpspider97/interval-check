@@ -21,8 +21,8 @@ let border_sell_profit_price;
    
 let botRunning = true;
 let buy_sell_profit_point = 100
-let buy_sell_point = buy_sell_profit_point/2
-let cancel_gap = buy_sell_point
+let buy_sell_point = 50
+let cancel_gap = 50
 let lot_size_increase = 2
 let total_error_count = 0
 
@@ -31,6 +31,7 @@ let project_error_message = ""
 let current_balance = 0
 let orderInProgress = false  
 let isBracketOrderExist = false  
+let current_running_order = ''   
 
 const api_url = process.env.API_URL 
 const socket_url = process.env.API_URL_SOCKET 
@@ -87,66 +88,47 @@ function wsConnect() {
       subscribe(ws, 'v2/ticker', ['BTCUSD']);
       //subscribe(ws, 'positions', ['all']);
     } else {
-      
-      if(total_error_count>1){
-        console.log('total_error_count___',total_error_count)
-      }
-      
-      if(total_error_count>5) { 
-        ws.close(1000, 'Too many errors');
-        //await onError(new Error('Too many errors'));
-        //return; 
-      } 
+        
+        if(total_error_count>1){
+            console.log('total_error_count___',total_error_count)
+        }
+        
+        if(total_error_count>5) { 
+            ws.close(1000, 'Too many errors');
+        } 
 
-      if(message.type == "v2/ticker"){
-       //console.log('bitcoin_price___1',message)
-        if(message?.mark_price){
-          if(isBracketOrderExist){
-            if (message?.mark_price > border_buy_profit_price+50 || message?.mark_price < border_sell_profit_price-50) { 
-              console.log('resetLoop____')
-              await resetLoop(1)
+        if(message.type == "v2/ticker"){ 
+            if(current_running_order == '' && message?.mark_price>border_buy_price){
+                console.log('buy_order___')
+                current_running_order = 'buy'
+                await createOrder('buy')
+            } 
+            if(current_running_order == 'buy' && message?.mark_price<border_buy_price-cancel_gap){
+                console.log('cancel_buy_order_on_loss__')
+                await cancelAllOpenOrder()
+                current_lot *= lot_size_increase
             }
-          }else{
+            if(current_running_order == '' && message?.mark_price<border_sell_price){
+                console.log('sell_order___')
+                current_running_order = 'sell'
+                await createOrder('sell')
+            }
+
+            if(current_running_order == 'sell' && message?.mark_price>border_sell_price+cancel_gap){
+                console.log('resetLoop____',message?.mark_price,border_buy_profit_price,border_sell_profit_price)
+                console.log('cancel_sell_order_on_loss___')
+                await cancelAllOpenOrder()
+                current_lot *= lot_size_increase
+            }
+             
             if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) { 
-              console.log('resetLoop____')
-              await resetLoop(1)
+                console.log('resetLoop____',message?.mark_price,border_buy_profit_price,border_sell_profit_price)
+                console.log('cancel_order_on_profit___')
+                await cancelAllOpenOrder()
+                await resetLoop(1)
             }
-          }
             await triggerOrder(message?.mark_price)
         } 
-      }
-      //console.log('message____',JSON.stringify(message))
-      if(message?.bracket_order == null && message?.reason == "stop_trigger" && message?.state == "open" && message?.meta_data?.trigger_price != undefined){
-        if(isBracketOrderExist){
-          console.log('reset loop due to bracket order____',isBracketOrderExist)
-          current_lot *= lot_size_increase 
-          await resetLoop(current_lot)
-        }
-      }
-      if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
-        console.log(`============= ORDER : ${message.side} order trigger ============= `)
-        const bracket_response = await createBracketOrder(message.side)
-        //console.log('bracket_response___',bracket_response)
-        if(!bracket_response.status){
-          await resetLoop(1)
-        }else{
-          isBracketOrderExist = true
-        }
-      }
-      if(message?.bracket_order == true){
-        if(message.meta_data.pnl != undefined){ 
-          if(parseFloat(message.meta_data.pnl)>0){
-            console.log(`============= BRACKET ORDER : Profit (${message.meta_data.pnl}) from bracket order ============= `)
-            await resetLoop(1)
-          }else{
-            console.log(`============= BRACKET ORDER : Loss (${message.meta_data.pnl}) from bracket order ============= `)
-            current_lot *= lot_size_increase 
-            await resetLoop(current_lot) 
-          }
-          isBracketOrderExist = false
-        }
-        //console.log('Received message:', JSON.stringify(message));
-      }
     }
   } 
   async function onError(error) {
@@ -218,6 +200,7 @@ async function generateEncryptSignature(signaturePayload) {
 
 async function cancelAllOpenOrder() {
   try {
+    current_running_order = ''
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
       close_all_portfolio: true,
@@ -242,114 +225,6 @@ async function cancelAllOpenOrder() {
     botRunning = false
     return { message: error.message, status: false };
   }
-} 
- 
-async function currentBalance() {
-  try {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signaturePayload = `GET${timestamp}/v2/wallet/balances`;
-    const signature = await generateEncryptSignature(signaturePayload);
-
-    const headers = {
-      "api-key": key,
-      "signature": signature,
-      "timestamp": timestamp,
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    }; 
-    const response = await axios.get(`${api_url}/v2/wallet/balances`, { headers });
-    //console.log('response____',JSON.parse(response.data.result[0].balance).toFixed(2))
-    return { 
-      data: JSON.parse(response.data.result[0].balance).toFixed(2),
-      status:true
-    }
-  } catch (error) {
-    console.log('get_balance_error_message__',error.response.data)
-    project_error_message = JSON.stringify(error.response.data)
-    return { message: error.message, status: false };
-  }
-}
-async function currentOpenPosition() {
-  try {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signaturePayload = `GET${timestamp}/v2/positions?product_id=${bitcoin_product_id}`;
-    const signature = await generateEncryptSignature(signaturePayload);
-
-    const headers = {
-      "api-key": key,
-      "signature": signature,
-      "timestamp": timestamp,
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    }; 
-    const response = await axios.get(`${api_url}/v2/positions?product_id=${bitcoin_product_id}`, { headers });
-    //console.log('response____',response.data)
-    return { 
-      data: response.data,
-      status:true
-    }
-  } catch (error) {
-    console.log('get_balance_error_message__',error.response.data)
-    project_error_message = JSON.stringify(error.response.data)
-    return { message: error.message, status: false };
-  }
-}
-
-async function createBracketOrder(bidType,current_price){
-  //return true
-  try{
-      let timestamp = Math.floor(Date.now() / 1000)
-      const bodyParams = {
-          "product_id": bitcoin_product_id,
-          "product_symbol": "BTCUSD",
-          "take_profit_order": {
-            "order_type": "limit_order",
-            "stop_price": (bidType == 'buy' ? border_buy_profit_price+2 : border_sell_profit_price+2).toString(),
-            "limit_price": (bidType == 'buy' ? border_buy_profit_price : border_sell_profit_price).toString()
-          },
-          "stop_loss_order": {
-              "order_type": "limit_order",
-              "stop_price": (bidType == 'buy' ? border_buy_price-cancel_gap-2 : border_sell_price+cancel_gap+2).toString(),
-              "limit_price": (bidType == 'buy' ? border_buy_price-cancel_gap : border_sell_price+cancel_gap).toString()
-          },
-          "bracket_stop_trigger_method": "mark_price"
-      } 
-      //console.log('bracket_order_response_body_params____',bodyParams)
-      let signaturePayload = `POST${timestamp}/v2/orders/bracket${JSON.stringify(bodyParams)}`
-      signature = await generateEncryptSignature(signaturePayload)
-      const headers = {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-          "api-key": key,
-          "signature": signature,
-          "timestamp": timestamp
-      }
-      const response = await fetch(`${api_url}/v2/orders/bracket`,{ 
-          method: "POST",
-          headers,
-          body: JSON.stringify(bodyParams)
-      })
-      const data = await response.json() 
-      //console.log('bracket_order_response___',data)
-      if(data.success){
-          return {
-              data,
-              status : true
-          } 
-      }
-      total_error_count++
-      return {
-              message: JSON.stringify(data),
-              status : false
-          }
-  } catch (error) {
-    total_error_count++
-    //console.log('bodyParams_bracket_order_error__',error.message)
-    return {
-        message: error.message,
-        status : false
-    }
-  }
 }
 
 async function createOrder(bidType,bitcoin_current_price) {
@@ -365,20 +240,8 @@ async function createOrder(bidType,bitcoin_current_price) {
           product_id: bitcoin_product_id,
           product_symbol: "BTCUSD",
           size: current_lot,
-          side: bidType, 
-          order_type: "limit_order",
-          stop_order_type: "stop_loss_order", 
-          limit_price: (bidType == 'buy')?border_buy_price-2:border_sell_price, 
-          stop_price: (bidType == 'buy')?border_buy_price:border_sell_price-2,
-          stop_trigger_method: "mark_price",
-          //reduce_only:true,
-         // reduce_only:true, 
-          //post_only: true,
-          //time_in_force: 'gtc',
-          // bracket_stop_loss_limit_price: (bidType == 'buy')?border_buy_price-5:border_sell_price+5,
-          // bracket_stop_loss_price: (bidType == 'buy')?border_buy_price:border_sell_price,
-          // bracket_take_profit_limit_price: (bidType == 'buy')?border_buy_profit_price-5:border_sell_profit_price+5,
-          // bracket_take_profit_price: (bidType == 'buy')?border_buy_profit_price:border_sell_profit_price,
+          side: bidType,   
+          order_type: "market_order", 
         };
         //console.log('order_bodyParams___', bitcoin_current_price, bodyParams)
         const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
@@ -403,32 +266,12 @@ async function createOrder(bidType,bitcoin_current_price) {
         console.log('error.message___2_',JSON.stringify(error?.response?.data))
         total_error_count++
         project_error_message = JSON.stringify(error?.response?.data)
-        orderInProgress = false;
-        await triggerLimitOrderOnBothSide(bitcoin_current_price)
+        orderInProgress = false; 
         //botRunning = false
         return { message: error?.message, status: false };
       } finally {
         orderInProgress = false;
       }
-}
- 
-async function triggerLimitOrderOnBothSide(bitcoin_current_price=0){
-  try{
-    const cancle_response = await cancelAllOpenOrder()
-    if(cancle_response.status){
-      const sell_order_response = await createOrder('sell',bitcoin_current_price)
-      console.log('sell_order___',sell_order_response)
-      if(sell_order_response.status){
-        const buy_order_response = await createOrder('buy',bitcoin_current_price)
-        console.log('buy_order___',buy_order_response)
-        if(!buy_order_response.status){
-          await init()
-        }
-      }
-    }
-  }catch(error){
-    await cancelAllOpenOrder()
-  }
 }
 
 async function getCurrentPriceOfBitcoin() {
@@ -458,8 +301,7 @@ async function init() {
   order_exicuted_at_price = 0 
   total_error_count = 0 
   isBracketOrderExist = false
-
-  await triggerLimitOrderOnBothSide(markPrice) 
+ 
   emitter.emit('log', { type: "init", markPrice });
 }
 
@@ -494,21 +336,6 @@ async function triggerOrder(current_price,openPosition) {
     console.log('error____',error)
   }
 }
-
-// async function getBitcoinPriceLoop() { 
-//   if(total_error_count>5) return
-//   if (!botRunning) return
-//   try {  
-//     const result = await getCurrentPriceOfBitcoin()
-//     if (!result.status) return
-//     const current_bitcoin_price = Math.round(result.data.result.mark_price)
-
-//     await triggerOrder(current_bitcoin_price)
-    
-//   } catch (err) {
-//     emitter.emit('log', { type: "error", message: err.message });
-//   }
-// }
  
 emitter.on("stop", () => {
   botRunning = false; 
