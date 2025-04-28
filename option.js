@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 5
+let current_lot = 10
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -39,7 +39,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 5;
+  current_lot = 10;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -124,7 +124,7 @@ function wsConnect() {
                 console.log('buy_data____',border_sell_profit_price,'<',message?.mark_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
-                await resetLoop(5)
+                await resetLoop(10)
             }
             await triggerOrder(message?.mark_price)
         } 
@@ -149,7 +149,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(5)
+        resetLoop(10)
       }, 60000);
 
     }else{
