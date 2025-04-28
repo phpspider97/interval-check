@@ -98,20 +98,21 @@ function wsConnect() {
         } 
 
         if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
-          console.log(`============= ORDER : ${message.side} order trigger ============= `)
+          console.log(`============= ORDER TRIGGERED ============= `)
           //current_running_order = message.side
         }
 
-        if(message.type == "v2/ticker"){ 
- 
-            if(current_running_order == 'sell' && message?.close<border_sell_price){
+        if(message.type == "v2/ticker"){
+            if(current_running_order == 'sell' && message?.mark_price<border_sell_price){
+                console.log('sell_data____',message?.mark_price,'<',border_sell_price)
                 current_running_order = 'buy'
                 current_lot *= lot_size_increase
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
-            if(current_running_order == 'buy' && message?.close>border_buy_price){
+            if(current_running_order == 'buy' && message?.mark_price>border_buy_price){
+                console.log('buy_data____',message?.mark_price,'>',border_buy_price)
                 current_running_order = 'sell'
                 current_lot *= lot_size_increase
                 const result = await getCurrentPriceOfBitcoin('put');
@@ -119,12 +120,13 @@ function wsConnect() {
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
               
-            if (message?.close > border_buy_profit_price || message?.close < border_sell_profit_price) {  
+            if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) {  
+                console.log('buy_data____',border_sell_profit_price,'<',message?.mark_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
                 await resetLoop(5)
             }
-            await triggerOrder(message?.close)
+            await triggerOrder(message?.mark_price)
         } 
     }
   } 
@@ -239,7 +241,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       size: current_lot,
       side: 'sell', 
       order_type: "market_order",
-      "stop_trigger_method": "last_traded_price", 
+      stop_trigger_method: "mark_price", 
     };
     console.log('order_bodyParams___', bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
@@ -314,9 +316,10 @@ async function getCurrentPriceOfBitcoin(data_type) {
           );
       }else if(data_type == 'current'){
             current_running_order = 'sell'
-          option_data = allProducts.filter(product =>
-          product.contract_type == 'put_options' && product.strike_price == spot_price-200
-          );
+            option_data = allProducts.filter(product =>
+                product.contract_type == 'put_options' && product.strike_price == spot_price-200
+            );
+            console.log('BTC Options:',allProducts[0].spot_price,spot_price,spot_price-200);
       }
     
       const bitcoin_option_data = { 
@@ -324,8 +327,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
           border_buy_price:spot_price,
           border_sell_price:spot_price-200
       }
-      console.log('BTC Options:',spot_price,bitcoin_option_data.border_buy_price,bitcoin_option_data.border_sell_price);
-  
+      
       return { data: bitcoin_option_data, status: true };
     } catch (error) {
       console.log('error___',error)
