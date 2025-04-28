@@ -23,6 +23,7 @@ let botRunning = true;
 let buy_sell_profit_point = 500
 let buy_sell_point = 200
 let CANCEL_GAP = 200
+let PROFIT_GAP = 0
 let lot_size_increase = 2
 let total_error_count = 0
 
@@ -120,7 +121,7 @@ function wsConnect() {
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
               
-            if (message?.spot_price > border_buy_profit_price || message?.spot_price < border_sell_profit_price) {  
+            if (message?.spot_price > border_buy_profit_price+PROFIT_GAP || message?.spot_price < border_sell_profit_price-PROFIT_GAP) {  
                 console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
@@ -234,6 +235,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     }
     if(current_lot > 32){
         current_lot =  21
+        PROFIT_GAP = 200
     }
  
   if (orderInProgress) return { message: "Order already in progress", status: false };
