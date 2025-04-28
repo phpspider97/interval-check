@@ -104,14 +104,14 @@ function wsConnect() {
 
         if(message.type == "v2/ticker"){ 
  
-            if(current_running_order == 'sell' && message?.mark_price<border_sell_price){
+            if(current_running_order == 'sell' && message?.close<border_sell_price){
                 current_running_order = 'buy'
                 current_lot *= lot_size_increase
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
-            if(current_running_order == 'buy' && message?.mark_price>border_buy_price){
+            if(current_running_order == 'buy' && message?.close>border_buy_price){
                 current_running_order = 'sell'
                 current_lot *= lot_size_increase
                 const result = await getCurrentPriceOfBitcoin('put');
@@ -119,12 +119,12 @@ function wsConnect() {
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
               
-            if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) {  
+            if (message?.close > border_buy_profit_price || message?.close < border_sell_profit_price) {  
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
                 await resetLoop(5)
             }
-            await triggerOrder(message?.mark_price)
+            await triggerOrder(message?.close)
         } 
     }
   } 
@@ -239,7 +239,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       size: current_lot,
       side: 'sell', 
       order_type: "market_order",
-      //stop_trigger_method: "mark_price",
+      "stop_trigger_method": "last_traded_price", 
     };
     console.log('order_bodyParams___', bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
