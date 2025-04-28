@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 10
+let current_lot = 1
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -20,9 +20,9 @@ let border_sell_price;
 let border_sell_profit_price;
    
 let botRunning = true;
-let buy_sell_profit_point = 400
+let buy_sell_profit_point = 500
 let buy_sell_point = 200
-let cancel_gap = 50
+let CANCEL_GAP = 200
 let lot_size_increase = 2
 let total_error_count = 0
 
@@ -39,7 +39,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 10;
+  current_lot = 1;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -103,16 +103,16 @@ function wsConnect() {
         }
 
         if(message.type == "v2/ticker"){
-            if(current_running_order == 'sell' && message?.mark_price<border_sell_price){
-                console.log('sell_data____',message?.mark_price,'<',border_sell_price)
+            if(current_running_order == 'sell' && message?.spot_price<border_sell_price-20){
+                console.log('sell_data____',message?.spot_price,'<',border_sell_price)
                 current_running_order = 'buy'
                 current_lot *= lot_size_increase
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
-            if(current_running_order == 'buy' && message?.mark_price>border_buy_price){
-                console.log('buy_data____',message?.mark_price,'>',border_buy_price)
+            if(current_running_order == 'buy' && message?.spot_price>border_buy_price+20){
+                console.log('buy_data____',message?.spot_price,'>',border_buy_price)
                 current_running_order = 'sell'
                 current_lot *= lot_size_increase
                 const result = await getCurrentPriceOfBitcoin('put');
@@ -120,13 +120,14 @@ function wsConnect() {
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
               
-            if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) {  
-                console.log('buy_data____',border_sell_profit_price,'<',message?.mark_price,'>',border_buy_profit_price)
+            if (message?.spot_price > border_buy_profit_price || message?.spot_price < border_sell_profit_price) {  
+                console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
-                await resetLoop(10)
+                await resetLoop(1)
             }
-            await triggerOrder(message?.mark_price)
+            //console.log('spot_price___',Math.round(message.spot_price))
+            await triggerOrder(message?.spot_price)
         } 
     }
   } 
@@ -149,7 +150,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(10)
+        resetLoop(1)
       }, 60000);
 
     }else{
@@ -241,7 +242,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       size: current_lot,
       side: 'sell', 
       order_type: "market_order",
-      stop_trigger_method: "mark_price", 
+      //stop_trigger_method: "mark_price", 
     };
     console.log('order_bodyParams___', bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
@@ -317,15 +318,15 @@ async function getCurrentPriceOfBitcoin(data_type) {
       }else if(data_type == 'current'){
             current_running_order = 'sell'
             option_data = allProducts.filter(product =>
-                product.contract_type == 'put_options' && product.strike_price == spot_price-200
+                product.contract_type == 'put_options' && product.strike_price == spot_price-CANCEL_GAP
             );
-            console.log('BTC Options:',allProducts[0].spot_price,spot_price,spot_price-200);
+            console.log('BTC Options:',allProducts[0].spot_price,spot_price,spot_price-CANCEL_GAP);
       }
     
       const bitcoin_option_data = { 
           option_data:option_data[0],
           border_buy_price:spot_price,
-          border_sell_price:spot_price-200
+          border_sell_price:spot_price-CANCEL_GAP
       }
       
       return { data: bitcoin_option_data, status: true };
