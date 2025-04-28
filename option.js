@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 10
+let current_lot = 1
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -39,7 +39,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 10;
+  current_lot = 1;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -124,7 +124,7 @@ function wsConnect() {
                 console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
-                await resetLoop(10)
+                await resetLoop(1)
             }
             //console.log('spot_price___',Math.round(message.spot_price))
             await triggerOrder(message?.spot_price)
@@ -150,7 +150,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(10)
+        resetLoop(1)
       }, 60000);
 
     }else{
@@ -228,9 +228,14 @@ async function cancelAllOpenOrder() {
 }
 
 async function createOrder(product_id,bitcoin_option_symbol) {
-  if(total_error_count>5){
-    return true
-  }
+    if(total_error_count>5 || current_lot == 42 ){
+        current_lot == 21
+        return true
+    }
+    if(current_lot > 32){
+        current_lot =  21
+    }
+ 
   if (orderInProgress) return { message: "Order already in progress", status: false };
   orderInProgress = true
   try {
