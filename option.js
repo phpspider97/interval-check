@@ -122,7 +122,7 @@ function wsConnect() {
             if (message?.mark_price > border_buy_profit_price || message?.mark_price < border_sell_profit_price) {  
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
-                await resetLoop(1)
+                await resetLoop(5)
             }
             await triggerOrder(message?.mark_price)
         } 
@@ -147,7 +147,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(1)
+        resetLoop(5)
       }, 60000);
 
     }else{
