@@ -108,6 +108,7 @@ function wsConnect() {
                 console.log('sell_data____',message?.spot_price,'<',border_sell_price)
                 current_running_order = 'buy'
                 current_lot *= lot_size_increase
+                await cancelAllOpenOrder()
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
@@ -116,6 +117,7 @@ function wsConnect() {
                 console.log('buy_data____',message?.spot_price,'>',border_buy_price)
                 current_running_order = 'sell'
                 current_lot *= lot_size_increase
+                await cancelAllOpenOrder()
                 const result = await getCurrentPriceOfBitcoin('put');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
@@ -241,7 +243,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const bodyParams = {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
-      size: (current_lot>40)?30:current_lot,
+      size: (current_lot>40)?30:current_lot+5,
       side: 'sell', 
       order_type: "market_order",
       //stop_trigger_method: "mark_price", 
