@@ -243,10 +243,9 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const bodyParams = {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
-      size: (current_lot>40)?30:current_lot+5,
+      size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+5,
       side: 'sell', 
-      order_type: "market_order",
-      //stop_trigger_method: "mark_price", 
+      order_type: "market_order"
     };
     console.log('order_bodyParams___', bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
