@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 1
+let current_lot = 5
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -20,7 +20,7 @@ let border_sell_price;
 let border_sell_profit_price;
    
 let botRunning = true;
-let buy_sell_profit_point = 500
+let buy_sell_profit_point = 300
 let buy_sell_point = 200
 let CANCEL_GAP = 200
 let PROFIT_GAP = 0
@@ -40,7 +40,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 1;
+  current_lot = 5;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -125,7 +125,7 @@ function wsConnect() {
                 console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
-                await resetLoop(1)
+                await resetLoop(5)
             }
             //console.log('spot_price___',Math.round(message.spot_price))
             await triggerOrder(message?.spot_price)
@@ -151,7 +151,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(1)
+        resetLoop(5)
       }, 60000);
 
     }else{
@@ -229,15 +229,10 @@ async function cancelAllOpenOrder() {
 }
 
 async function createOrder(product_id,bitcoin_option_symbol) {
-    if(total_error_count>5 || current_lot == 42 ){
-        current_lot == 21
+    if(total_error_count>5){ 
         return true
     }
-    if(current_lot > 32){
-        current_lot =  21
-        PROFIT_GAP = 200
-    }
- 
+     
   if (orderInProgress) return { message: "Order already in progress", status: false };
   orderInProgress = true
   try {
@@ -246,7 +241,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const bodyParams = {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
-      size: current_lot,
+      size: (current_lot>40)?30:current_lot,
       side: 'sell', 
       order_type: "market_order",
       //stop_trigger_method: "mark_price", 
@@ -263,7 +258,9 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       "Accept": "application/json",
     };
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
-     
+    if(current_lot > 40){
+        current_lot =  5
+    }
     if (response.data.success) {
       number_of_time_order_executed++; 
       return { data: response.data, status: true };
