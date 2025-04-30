@@ -102,7 +102,7 @@ function wsConnect() {
           console.log(`============= ORDER TRIGGERED ============= `)
           //current_running_order = message.side
         }
-
+ 
         if(message.type == "v2/ticker"){
             if(current_running_order == 'sell' && message?.spot_price<border_sell_price-20){
                 console.log('sell_data____',message?.spot_price,'<',border_sell_price)
