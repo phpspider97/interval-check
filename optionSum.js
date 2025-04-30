@@ -24,7 +24,7 @@ let buy_sell_profit_point = 300
 let buy_sell_point = 200
 let CANCEL_GAP = 200
 let PROFIT_GAP = 0
-let lot_size_increase = 2
+let lot_size_increase = 5
 let total_error_count = 0
 
 let order_exicuted_at_price = 0
@@ -107,7 +107,7 @@ function wsConnect() {
             if(current_running_order == 'sell' && message?.spot_price<border_sell_price-20){
                 console.log('sell_data____',message?.spot_price,'<',border_sell_price)
                 current_running_order = 'buy'
-                current_lot *= lot_size_increase
+                current_lot += lot_size_increase
                 await cancelAllOpenOrder()
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
@@ -116,7 +116,7 @@ function wsConnect() {
             if(current_running_order == 'buy' && message?.spot_price>border_buy_price+20){
                 console.log('buy_data____',message?.spot_price,'>',border_buy_price)
                 current_running_order = 'sell'
-                current_lot *= lot_size_increase
+                current_lot += lot_size_increase
                 await cancelAllOpenOrder()
                 const result = await getCurrentPriceOfBitcoin('put');
                 if (!result.status) return;
@@ -243,7 +243,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const bodyParams = {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
-      size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+20,
+      size: current_lot,
       side: 'sell', 
       order_type: "market_order"
     };
@@ -259,9 +259,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       "Accept": "application/json",
     };
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
-    if(current_lot > 40){
-        current_lot =  5
-    }
+    
     if (response.data.success) {
       number_of_time_order_executed++; 
       return { data: response.data, status: true };
