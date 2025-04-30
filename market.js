@@ -129,7 +129,7 @@ function wsConnect() {
 
             await triggerOrder(message?.spot_price)
         } 
-    }
+    } 
   } 
   async function onError(error) {
     await cancelAllOpenOrder()
