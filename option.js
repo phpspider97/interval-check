@@ -243,7 +243,8 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const bodyParams = {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
-      size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+20,
+      //size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+20,
+      size: (current_lot == 5)?current_lot:current_lot+20,
       side: 'sell', 
       order_type: "market_order"
     };
@@ -259,9 +260,9 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       "Accept": "application/json",
     };
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
-    if(current_lot > 40){
-        current_lot =  5
-    }
+    // if(current_lot > 40){
+    //     current_lot =  5
+    // }
     if (response.data.success) {
       number_of_time_order_executed++; 
       return { data: response.data, status: true };
