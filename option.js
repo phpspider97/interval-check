@@ -97,7 +97,7 @@ function wsConnect() {
         if(total_error_count>5) { 
             ws.close(1000, 'Too many errors');
         } 
-
+ 
         if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
           console.log(`============= ORDER TRIGGERED ============= `)
           //current_running_order = message.side
