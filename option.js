@@ -101,7 +101,7 @@ function wsConnect() {
         if(message?.bracket_order == null && message?.meta_data?.pnl != undefined){
           console.log(`============= ORDER TRIGGERED ============= `)
           //current_running_order = message.side
-        }
+        } 
  
         if(message.type == "v2/ticker"){
             if(current_running_order == 'sell' && message?.spot_price<border_sell_price-20){
