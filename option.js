@@ -2,9 +2,18 @@ const axios = require('axios');
 const crypto = require('crypto');
 require('dotenv').config();
 const WebSocket = require('ws');
+const nodemailer = require('nodemailer');
 
 const EventEmitter = require('events');
 const emitter = new EventEmitter();
+
+let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.USER_EMAIL,
+      pass: process.env.USER_PASSWORD
+    },
+  }); 
 
 let bitcoin_product_id;
 let current_lot = 20
@@ -230,6 +239,22 @@ async function cancelAllOpenOrder() {
   }
 }
 
+function sendEmail(message){
+    let mailOptions = {
+        from: 'phpspider97@gmail.com',
+        to: 'neelbhardwaj97@gmail.com',
+        subject: 'Option order created.',
+        text: JSON.stringify(message)
+    };
+    
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            return console.log('Error:', error);
+        }
+        console.log('Email sent:', info.response);
+    });
+}
+
 async function createOrder(product_id,bitcoin_option_symbol) {
     if(current_lot>320){
         current_lot = 20
@@ -268,6 +293,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     // }
     if (response.data.success) {
       number_of_time_order_executed++; 
+      sendEmail(bodyParams)
       return { data: response.data, status: true };
     }
 
