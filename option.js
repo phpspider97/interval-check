@@ -238,7 +238,7 @@ async function cancelAllOpenOrder() {
     return { message: error.message, status: false };
   }
 }
-
+ 
 function sendEmail(message){
     let mailOptions = {
         from: 'phpspider97@gmail.com',
