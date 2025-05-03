@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 let bitcoin_product_id;
-let current_lot = 5
+let current_lot = 20
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -40,7 +40,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 5;
+  current_lot = 20;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -127,7 +127,7 @@ function wsConnect() {
                 console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder()
-                await resetLoop(5)
+                await resetLoop(20)
             }
             //console.log('spot_price___',Math.round(message.spot_price))
             await triggerOrder(message?.spot_price)
@@ -153,7 +153,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(5)
+        resetLoop(20)
       }, 60000);
 
     }else{
@@ -231,6 +231,9 @@ async function cancelAllOpenOrder() {
 }
 
 async function createOrder(product_id,bitcoin_option_symbol) {
+    if(current_lot>320){
+        current_lot = 20
+    }
     if(total_error_count>5){ 
         return true
     }
@@ -244,7 +247,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
       //size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+20,
-      size: (current_lot == 5)?current_lot:current_lot+20,
+      size: (current_lot == 20)?current_lot:current_lot+30,
       side: 'sell', 
       order_type: "market_order"
     };
