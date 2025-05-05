@@ -256,7 +256,7 @@ function sendEmail(message){
 }
 
 async function createOrder(product_id,bitcoin_option_symbol) {
-    if(current_lot>320){
+    if(current_lot>190){
         current_lot = 20
     }
     if(total_error_count>5){ 
