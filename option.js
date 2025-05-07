@@ -296,7 +296,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
 
     return { message: "Order failed", status: false };
   } catch (error) {
-    console.log('error.message___2_',JSON.stringify(error?.response?.data))
+    console.log('Create order time error : ',error.response?.data || error.message)
     total_error_count++
     project_error_message = JSON.stringify(error?.response?.data)
     orderInProgress = false;
