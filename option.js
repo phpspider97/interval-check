@@ -21,6 +21,7 @@ let current_profit = 0;
 let total_profit = 0;
 let border_price;
 let number_of_time_order_executed = 0;
+let bitcoin_current_price = 0
 
 let border_buy_price;
 let border_buy_profit_price;
@@ -116,8 +117,9 @@ function wsConnect() {
             if(current_running_order == 'sell' && message?.spot_price<border_sell_price-20){
                 console.log('sell_data____',message?.spot_price,'<',border_sell_price)
                 current_running_order = 'buy'
+                bitcoin_current_price = message?.spot_price
                 current_lot *= lot_size_increase
-                await cancelAllOpenOrder()
+                await cancelAllOpenOrder('LOSS',message?.spot_price)
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
@@ -125,8 +127,9 @@ function wsConnect() {
             if(current_running_order == 'buy' && message?.spot_price>border_buy_price+20){
                 console.log('buy_data____',message?.spot_price,'>',border_buy_price)
                 current_running_order = 'sell'
+                bitcoin_current_price = message?.spot_price
                 current_lot *= lot_size_increase
-                await cancelAllOpenOrder()
+                await cancelAllOpenOrder('LOSS',message?.spot_price)
                 const result = await getCurrentPriceOfBitcoin('put');
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
@@ -134,8 +137,9 @@ function wsConnect() {
               
             if (message?.spot_price > border_buy_profit_price+PROFIT_GAP || message?.spot_price < border_sell_profit_price-PROFIT_GAP) {  
                 console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
+                bitcoin_current_price = message?.spot_price
                 console.log('cancel_order_on_profit___')
-                await cancelAllOpenOrder()
+                await cancelAllOpenOrder('PROFIT',message?.spot_price)
                 await resetLoop(20)
             }
             //console.log('spot_price___',Math.round(message.spot_price))
@@ -144,7 +148,7 @@ function wsConnect() {
     }
   } 
   async function onError(error) {
-    await cancelAllOpenOrder()
+    await cancelAllOpenOrder('ERROR',0)
     console.error('Socket Error:', error.message);
   }
   async function resetLoop(lot_size){
@@ -156,7 +160,7 @@ function wsConnect() {
     
     if(code == 1000){
       console.log('cancle all order')
-      await cancelAllOpenOrder()
+      await cancelAllOpenOrder('ERROR',1)
 
       setTimeout(() => { // connect again after 1 minute
         total_error_count = 0
@@ -210,8 +214,9 @@ async function generateEncryptSignature(signaturePayload) {
   return crypto.createHmac("sha256", secret).update(signaturePayload).digest("hex");
 }
 
-async function cancelAllOpenOrder() {
+async function cancelAllOpenOrder(loss_profit,current_price) {
   try {
+    sendEmail('',`CANCEL OPTION ORDER AT ${loss_profit} : ${current_price}`)
     current_running_order = ''
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
@@ -239,11 +244,11 @@ async function cancelAllOpenOrder() {
   }
 }
  
-function sendEmail(message){
+function sendEmail(message,subject){
     let mailOptions = {
         from: 'phpspider97@gmail.com',
         to: 'neelbhardwaj97@gmail.com',
-        subject: 'Option order created.',
+        subject: subject,
         text: JSON.stringify(message)
     };
     
@@ -290,7 +295,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
     if (response.data.success) {
       number_of_time_order_executed++; 
-      sendEmail(bodyParams)
+      sendEmail(bodyParams,`CREATE OPTION ORDER AT ${bitcoin_current_price}`)
       return { data: response.data, status: true };
     }
 
@@ -338,6 +343,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
       const allProducts = response.data.result;
     
       const spot_price = Math.round(allProducts[0].spot_price / 200) * 200
+      bitcoin_current_price = Math.round(result.data.spot_price);
       let option_data = []
       if(data_type == 'call'){
           option_data = allProducts.filter(product =>
@@ -355,12 +361,12 @@ async function getCurrentPriceOfBitcoin(data_type) {
             console.log('BTC Options:',allProducts[0].spot_price,spot_price,spot_price-CANCEL_GAP);
       }
     
-      const bitcoin_option_data = { 
+      const bitcoin_option_data = {
           option_data:option_data[0],
           border_buy_price:spot_price,
           border_sell_price:spot_price-CANCEL_GAP
       }
-      
+      console.log('bitcoin_option_data___',bitcoin_option_data)
       return { data: bitcoin_option_data, status: true };
     } catch (error) {
       console.log('error___',error)
@@ -369,13 +375,13 @@ async function getCurrentPriceOfBitcoin(data_type) {
   }
   
   async function init() {
-    await cancelAllOpenOrder()
+    await cancelAllOpenOrder('START',0)
     const result = await getCurrentPriceOfBitcoin('current');
     if (!result.status) return;
    
-    const markPrice = Math.round(result.data.spot_price);
+    //bitcoin_current_price = Math.round(result.data.spot_price);
     //bitcoin_product_id = result.data.result.product_id;
-    border_price = markPrice;
+    //border_price = markPrice;
   
     border_buy_price = result.data.border_buy_price;
     border_buy_profit_price = border_buy_price + buy_sell_profit_point;
@@ -388,7 +394,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
     isBracketOrderExist = false
       
     await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
-    emitter.emit('log', { type: "init", markPrice });
+   // emitter.emit('log', { type: "init", markPrice });
   }
 
 async function triggerOrder(current_price,openPosition) {
