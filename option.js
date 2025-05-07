@@ -16,7 +16,7 @@ let transporter = nodemailer.createTransport({
   }); 
 
 let bitcoin_product_id;
-let current_lot = 20
+let current_lot = [1, 3, 7, 18, 45, 113, 282]
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -256,15 +256,15 @@ function sendEmail(message){
 }
 
 async function createOrder(product_id,bitcoin_option_symbol) {
-    if(current_lot>190){
-        current_lot = 20
-    }
     if(total_error_count>5){ 
         return true
     }
      
-  if (orderInProgress) return { message: "Order already in progress", status: false };
-  orderInProgress = true
+    if (orderInProgress) return { message: "Order already in progress", status: false };
+    orderInProgress = true
+    if(number_of_time_order_executed>4){
+      number_of_time_order_executed = 0
+    }
   try {
    // bidType = (bidType == 'buy')?'sell':'buy'
     const timestamp = Math.floor(Date.now() / 1000);
@@ -272,7 +272,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       product_id: product_id, 
       product_symbol: bitcoin_option_symbol,
       //size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+20,
-      size: (current_lot == 20)?current_lot:current_lot+30,
+      size: current_lot[number_of_time_order_executed],
       side: 'sell', 
       order_type: "market_order"
     };
@@ -288,9 +288,6 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       "Accept": "application/json",
     };
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
-    // if(current_lot > 40){
-    //     current_lot =  5
-    // }
     if (response.data.success) {
       number_of_time_order_executed++; 
       sendEmail(bodyParams)
