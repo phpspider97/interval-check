@@ -346,12 +346,12 @@ async function getCurrentPriceOfBitcoin(data_type) {
       bitcoin_current_price = Math.round(allProducts[0].spot_price);
       let option_data = []
       if(data_type == 'call'){
-            current_running_order = 'buy'
+            //current_running_order = 'buy'
             option_data = allProducts.filter(product =>
                 product.contract_type == 'call_options' && product.strike_price == border_buy_price
             );
       }else if(data_type == 'put'){
-            current_running_order = 'sell'
+            //current_running_order = 'sell'
             option_data = allProducts.filter(product =>
                 product.contract_type == 'put_options' && product.strike_price == border_sell_price
             );
