@@ -216,7 +216,7 @@ async function generateEncryptSignature(signaturePayload) {
 
 async function cancelAllOpenOrder(loss_profit,current_price) {
   try {
-    sendEmail('',`CANCEL OPTION ORDER AT ${loss_profit} : ${current_price}`)
+    sendEmail('',`CANCEL OPTION ORDER AT ${loss_profit} : ${current_price} RANGE : ${border_buy_profit_price} ${border_sell_profit_price}`)
     current_running_order = ''
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
@@ -295,7 +295,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
     if (response.data.success) {
       number_of_time_order_executed++; 
-      sendEmail(bodyParams,`CREATE OPTION ORDER AT ${bitcoin_current_price}`)
+      sendEmail(bodyParams,`CREATE OPTION ORDER AT ${bitcoin_current_price} RANGE : ${border_buy_profit_price} ${border_sell_profit_price}`)
       return { data: response.data, status: true };
     }
 
