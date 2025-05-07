@@ -136,11 +136,11 @@ function wsConnect() {
             }
               
             if (message?.spot_price > border_buy_profit_price+PROFIT_GAP || message?.spot_price < border_sell_profit_price-PROFIT_GAP) {  
-                console.log('buy_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
+                console.log('profit_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 bitcoin_current_price = message?.spot_price
                 console.log('cancel_order_on_profit___')
                 await cancelAllOpenOrder('PROFIT',message?.spot_price)
-                await resetLoop(20)
+               await resetLoop()
             }
             //console.log('spot_price___',Math.round(message.spot_price))
             await triggerOrder(message?.spot_price)
@@ -151,8 +151,8 @@ function wsConnect() {
     await cancelAllOpenOrder('ERROR',0)
     console.error('Socket Error:', error.message);
   }
-  async function resetLoop(lot_size){
-    current_lot = lot_size
+  async function resetLoop(){ 
+    number_of_time_order_executed = 0
     await init()
   }
   async function onClose(code, reason) {
@@ -166,7 +166,7 @@ function wsConnect() {
         total_error_count = 0
         console.log('Reconnecting after long time...')
         wsConnect();
-        resetLoop(20)
+        resetLoop()
       }, 60000);
 
     }else{
@@ -366,7 +366,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
           border_buy_price:spot_price,
           border_sell_price:spot_price-CANCEL_GAP
       }
-      console.log('bitcoin_option_data___',bitcoin_option_data)
+      console.log('bitcoin_buy_sell_price___',spot_price,spot_price-CANCEL_GAP)
       return { data: bitcoin_option_data, status: true };
     } catch (error) {
       console.log('error___',error)
@@ -384,10 +384,12 @@ async function getCurrentPriceOfBitcoin(data_type) {
     //border_price = markPrice;
   
     border_buy_price = result.data.border_buy_price;
-    border_buy_profit_price = border_buy_price + buy_sell_profit_point;
+    border_buy_profit_price = bitcoin_current_price + buy_sell_profit_point;
   
     border_sell_price = result.data.border_sell_price;
-    border_sell_profit_price = border_sell_price - buy_sell_profit_point;
+    border_sell_profit_price = bitcoin_current_price - buy_sell_profit_point;
+
+    console.log('border_buy_profit_price____',bitcoin_current_price,border_buy_profit_price,border_sell_profit_price)
   
     order_exicuted_at_price = 0 
     total_error_count = 0 
