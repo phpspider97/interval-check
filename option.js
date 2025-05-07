@@ -388,9 +388,9 @@ async function getCurrentPriceOfBitcoin(data_type) {
     border_buy_profit_price = bitcoin_current_price + buy_sell_profit_point;
   
     border_sell_price = result.data.border_sell_price;
-    border_sell_profit_price = bitcoin_current_price - buy_sell_profit_point;
+    border_sell_profit_price = border_sell_price - buy_sell_profit_point;
 
-    console.log('border_buy_profit_price____',bitcoin_current_price,border_buy_profit_price,border_sell_profit_price)
+    //console.log('border_buy_profit_price____',bitcoin_current_price,border_buy_profit_price,border_sell_profit_price)
   
     order_exicuted_at_price = 0 
     total_error_count = 0 
