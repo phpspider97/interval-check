@@ -51,7 +51,7 @@ const key = process.env.WEB_KEY
 const secret = process.env.WEB_SECRET 
 
 function resetBot() {
-  current_lot = 20;
+  //current_lot = 20;
   botRunning = true;
   current_profit = 0;
   total_profit = 0;
@@ -119,7 +119,7 @@ function wsConnect() {
                 console.log('sell_data____',message?.spot_price,'<',border_sell_price)
                 current_running_order = 'buy'
                 bitcoin_current_price = message?.spot_price
-                current_lot *= lot_size_increase
+                number_of_time_order_executed++
                 await cancelAllOpenOrder('LOSS',message?.spot_price)
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
@@ -129,7 +129,7 @@ function wsConnect() {
                 console.log('buy_data____',message?.spot_price,'>',border_buy_price)
                 current_running_order = 'sell'
                 bitcoin_current_price = message?.spot_price
-                current_lot *= lot_size_increase
+                number_of_time_order_executed++
                 await cancelAllOpenOrder('LOSS',message?.spot_price)
                 const result = await getCurrentPriceOfBitcoin('put');
                 if (!result.status) return;
@@ -276,13 +276,12 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
       product_id: product_id, 
-      product_symbol: bitcoin_option_symbol,
-      //size: (current_lot>40)?30:(current_lot == 5)?current_lot:current_lot+20,
+      product_symbol: bitcoin_option_symbol, 
       size: current_lot[number_of_time_order_executed],
       side: 'sell', 
       order_type: "market_order"
     };
-    console.log('order_bodyParams___', bodyParams)
+    console.log('order_bodyParams___', current_lot,number_of_time_order_executed, bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
     const signature = await generateEncryptSignature(signaturePayload);
 
@@ -295,7 +294,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     };
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
     if (response.data.success) {
-      number_of_time_order_executed++; 
+      //number_of_time_order_executed++; 
       sendEmail(bodyParams,`CREATE OPTION ORDER AT ${bitcoin_current_price} RANGE : ${border_buy_profit_price} ${border_sell_profit_price}`)
       return { data: response.data, status: true };
     }
