@@ -218,7 +218,7 @@ async function generateEncryptSignature(signaturePayload) {
 async function cancelAllOpenOrder(loss_profit,current_price) {
   try {
     sendEmail('',`CANCEL OPTION ORDER AT ${loss_profit} : ${current_price} RANGE : ${border_buy_profit_price} ${border_sell_profit_price}`)
-    current_running_order = ''
+    //current_running_order = ''
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
       close_all_portfolio: true,
@@ -346,13 +346,15 @@ async function getCurrentPriceOfBitcoin(data_type) {
       bitcoin_current_price = Math.round(allProducts[0].spot_price);
       let option_data = []
       if(data_type == 'call'){
-          option_data = allProducts.filter(product =>
-              product.contract_type == 'call_options' && product.strike_price == border_buy_price
-          );
+            current_running_order = 'buy'
+            option_data = allProducts.filter(product =>
+                product.contract_type == 'call_options' && product.strike_price == border_buy_price
+            );
       }else if(data_type == 'put'){
-          option_data = allProducts.filter(product =>
-              product.contract_type == 'put_options' && product.strike_price == border_sell_price
-          );
+            current_running_order = 'sell'
+            option_data = allProducts.filter(product =>
+                product.contract_type == 'put_options' && product.strike_price == border_sell_price
+            );
       }else if(data_type == 'current'){
             current_running_order = 'sell'
             option_data = allProducts.filter(product =>
@@ -376,8 +378,8 @@ async function getCurrentPriceOfBitcoin(data_type) {
   
   async function init() {
     await cancelAllOpenOrder('START',0)
-    const result = await getCurrentPriceOfBitcoin('current');
-    if (!result.status) return;
+    const result = await getCurrentPriceOfBitcoin('current')
+    if (!result.status) return
    
     //bitcoin_current_price = Math.round(result.data.spot_price);
     //bitcoin_product_id = result.data.result.product_id;
