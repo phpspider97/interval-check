@@ -16,7 +16,8 @@ let transporter = nodemailer.createTransport({
   }); 
 
 let bitcoin_product_id;
-let current_lot = [1, 3, 7, 18]
+//let current_lot = [1, 3, 7, 18]
+let current_lot = [3, 7, 18, 45]
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
