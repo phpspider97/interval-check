@@ -343,7 +343,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
       const allProducts = response.data.result;
     
       const spot_price = Math.round(allProducts[0].spot_price / 200) * 200
-      bitcoin_current_price = Math.round(result.data.spot_price);
+      bitcoin_current_price = Math.round(allProducts[0].spot_price);
       let option_data = []
       if(data_type == 'call'){
           option_data = allProducts.filter(product =>
