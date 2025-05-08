@@ -268,7 +268,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
      
     if (orderInProgress) return { message: "Order already in progress", status: false };
     orderInProgress = true
-    if(number_of_time_order_executed>3){
+    if(number_of_time_order_executed>2){
       number_of_time_order_executed = 0
     }
   try {
