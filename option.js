@@ -223,7 +223,7 @@ async function cancelAllOpenOrder(loss_profit,current_price) {
   try {
     if(loss_profit != 'START'){
         const message_template = `<br /><br /><br />
-        <table border="1" cellpadding="8" cellspacing="0">
+        <table border="1" cellpadding="8" cellspacing="3">
             <tr>
                 <td>Product Symbol</td>
                 <td>:</td>
