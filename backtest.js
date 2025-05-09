@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const now = Math.floor(Date.now() / 1000); // current time in seconds
-const thirtyDaysAgo = now - (10 * 24 * 60 * 60); // 30 days in seconds
+const thirtyDaysAgo = now - (1 * 24 * 60 * 60); // 30 days in seconds
 
 // console.log('Start (30 days ago):', thirtyDaysAgo);
 // console.log('End (now):', now);
@@ -20,7 +20,7 @@ async function backtest() {
 
     const candles = response.data.result;
     
-    let lot_size                =   [3, 7, 18, 45] 
+    let lot_size                =   [1, 3, 11, 18, 45] 
     let current_running_order   =   'sell'
     let loss                    =   0
     let profit                  =   0 
@@ -36,7 +36,7 @@ async function backtest() {
     //console.log('candles___',candles)
     console.clear();
     for (const candle of candles) { 
-        if(lot_array_count>3){ lot_array_count = 0 }
+        if(lot_array_count>2){ lot_array_count = 0 }
         crossCount++
         let closePrice                  =   candle.open;
         let first_close_caldle          =   candles[candle_index].open; 

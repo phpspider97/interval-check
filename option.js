@@ -17,7 +17,7 @@ let transporter = nodemailer.createTransport({
 
 let bitcoin_product_id;
 //let current_lot = [1, 3, 7, 18]
-let current_lot = [1, 3, 7, 18, 45]
+let current_lot = [1, 3, 9]
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -26,12 +26,16 @@ let bitcoin_current_price = 0
 
 let border_buy_price;
 let border_buy_profit_price;
+let order_information = {
+    product_symbol:null,
+    size:0
+}
 
 let border_sell_price;
 let border_sell_profit_price;
    
 let botRunning = true;
-let buy_sell_profit_point = 300
+let buy_sell_profit_point = 400
 let buy_sell_point = 200
 let CANCEL_GAP = 200
 let PROFIT_GAP = 0
@@ -115,7 +119,7 @@ function wsConnect() {
         } 
  
         if(message.type == "v2/ticker"){ 
-            if(current_running_order == 'sell' && message?.spot_price<border_sell_price-20){
+            if(current_running_order == 'sell' && message?.spot_price<border_sell_price){
                 console.log('sell_data____',message?.spot_price,'<',border_sell_price)
                 current_running_order = 'buy'
                 bitcoin_current_price = message?.spot_price
@@ -125,7 +129,7 @@ function wsConnect() {
                 if (!result.status) return;
                 await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
             }
-            if(current_running_order == 'buy' && message?.spot_price>border_buy_price+20){
+            if(current_running_order == 'buy' && message?.spot_price>border_buy_price){
                 console.log('buy_data____',message?.spot_price,'>',border_buy_price)
                 current_running_order = 'sell'
                 bitcoin_current_price = message?.spot_price
@@ -217,7 +221,53 @@ async function generateEncryptSignature(signaturePayload) {
 
 async function cancelAllOpenOrder(loss_profit,current_price) {
   try {
-    sendEmail('',`CANCEL OPTION ORDER AT ${loss_profit} : ${current_price} RANGE : ${border_buy_profit_price} ${border_sell_profit_price}`)
+    if(loss_profit != 'START'){
+        const message_template = `<br /><br /><br />
+        <table border="1" cellpadding="8" cellspacing="0">
+            <tr>
+                <td>Product Symbol</td>
+                <td>:</td>
+                <td>${order_information.product_symbol}</td> 
+            </tr>
+            <tr>
+                <td>Size</td>
+                <td>:</td>
+                <td>${order_information.size}</td> 
+            </tr> 
+            <tr>
+                <td>Current Price</td>
+                <td>:</td>
+                <td>${current_price}</td> 
+            </tr>
+            <tr>
+                <td>Sell Profit Price</td>
+                <td>:</td>
+                <td>${border_sell_profit_price}</td> 
+            </tr>
+            <tr>
+                <td>Buy Profit Price</td>
+                <td>:</td>
+                <td>${border_buy_profit_price}</td> 
+            </tr>
+            <tr>
+                <td>Win Or Loss</td>
+                <td>:</td>
+                <td>${loss_profit}</td> 
+            </tr>
+            <tr>
+                <td>Border Buy Price</td>
+                <td>:</td>
+                <td>${border_buy_price}</td> 
+            </tr>
+            <tr>
+                <td>Border Sell Price</td>
+                <td>:</td>
+                <td>${border_sell_price}</td> 
+            </tr>
+        </table>
+        `
+        sendEmail(message_template,`ORDER STATUS : ${loss_profit}`)
+    }
     //current_running_order = ''
     const timestamp = Math.floor(Date.now() / 1000);
     const bodyParams = {
@@ -250,7 +300,7 @@ function sendEmail(message,subject){
         from: 'phpspider97@gmail.com',
         to: 'neelbhardwaj97@gmail.com',
         subject: subject,
-        text: JSON.stringify(message)
+        html: message
     };
     
     transporter.sendMail(mailOptions, (error, info) => {
@@ -281,6 +331,8 @@ async function createOrder(product_id,bitcoin_option_symbol) {
       side: 'sell', 
       order_type: "market_order"
     };
+    order_information.product_symbol = bitcoin_option_symbol
+    order_information.size = current_lot[number_of_time_order_executed]
     console.log('order_bodyParams___', current_lot,number_of_time_order_executed, bodyParams)
     const signaturePayload = `POST${timestamp}/v2/orders${JSON.stringify(bodyParams)}`;
     const signature = await generateEncryptSignature(signaturePayload);
@@ -295,7 +347,27 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     const response = await axios.post(`${api_url}/v2/orders`, bodyParams, { headers });
     if (response.data.success) {
       //number_of_time_order_executed++; 
-      sendEmail(bodyParams,`CREATE OPTION ORDER AT ${bitcoin_current_price} RANGE : ${border_buy_profit_price} ${border_sell_profit_price}`)
+
+      const message_template = `<br /><br /><br />
+      <table border="1" cellpadding="8" cellspacing="3">
+          <tr>
+              <td>Product Symbol</td>
+              <td>:</td>
+              <td>${order_information.product_symbol}</td> 
+          </tr>
+          <tr>
+              <td>Size</td>
+              <td>:</td>
+              <td>${order_information.size}</td> 
+          </tr>
+          <tr>
+              <td>Current Price</td>
+              <td>:</td>
+              <td>${bitcoin_current_price}</td> 
+          </tr>
+      </table>
+      `
+      sendEmail(message_template,`CREATE ORDER : ${order_information.product_symbol}`)
       return { data: response.data, status: true };
     }
 
