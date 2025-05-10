@@ -430,17 +430,15 @@ async function getCurrentPriceOfBitcoin(data_type) {
       }else if(data_type == 'current'){
             current_running_order = 'sell'
             option_data = allProducts.filter(product =>
-                product.contract_type == 'put_options' && product.strike_price == spot_price-CANCEL_GAP
-            );
-            console.log('BTC Options:',allProducts[0].spot_price,spot_price,spot_price-CANCEL_GAP);
+                product.contract_type == 'put_options' && product.strike_price == spot_price-200
+            ); 
       }
     
       const bitcoin_option_data = {
           option_data:option_data[0],
           border_buy_price:spot_price,
           border_sell_price:spot_price-CANCEL_GAP
-      }
-      console.log('bitcoin_buy_sell_price___',spot_price,spot_price-CANCEL_GAP)
+      } 
       return { data: bitcoin_option_data, status: true };
     } catch (error) {
       console.log('error___',error)
