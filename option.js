@@ -427,7 +427,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
         additional_profit_buy_price = 0 
         const expiry_date = getAdjustedDate() 
         console.log(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=11-05-2025`)
-        const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`);
+        const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=11-05-2025`);
         const allProducts = response.data.result;
         
         const spot_price = Math.round(allProducts[0].spot_price / 200) * 200
