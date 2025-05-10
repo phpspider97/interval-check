@@ -1,7 +1,8 @@
 const axios = require('axios');
 
-const now = Math.floor(Date.now() / 1000); // current time in seconds
-const thirtyDaysAgo = now - (10 * 24 * 60 * 60); // 30 days in seconds
+let now = Math.floor(Date.now() / 1000); // current time in seconds
+ now = now - (60 * 24 * 60 * 60); // 30 days in seconds
+const thirtyDaysAgo = now - (30 * 24 * 60 * 60); // 30 days in seconds
 
 // console.log('Start (30 days ago):', thirtyDaysAgo);
 // console.log('End (now):', now);
@@ -20,7 +21,7 @@ async function backtest() {
 
     const candles = response.data.result;
     
-    let lot_size                =   [1, 3, 9, 27, 81, 243] 
+    let lot_size                =   [ 3, 9, 27, 81, 243] 
     let current_running_order   =   'sell'
     let loss                    =   0
     let profit                  =   0 
@@ -40,12 +41,13 @@ async function backtest() {
         crossCount++
         let closePrice                  =   candle.open;
         let first_close_caldle          =   candles[candle_index].open; 
-        let sell_stop_loss              =   first_close_caldle-200
+        let sell_stop_loss              =   first_close_caldle-100
         let buy_stop_loss               =   first_close_caldle
-        let border_buy_profit_price     =   first_close_caldle+300
-        let border_sell_profit_price    =   first_close_caldle-500
+        let border_buy_profit_price     =   first_close_caldle+200
+        let border_sell_profit_price    =   first_close_caldle-300
        
         if(current_running_order == 'sell' && closePrice < sell_stop_loss){
+            //console.log(lot_size[lot_array_count])
             current_running_order = 'buy'
             loss += ( (loss_one_lot  + trading_fees_one_lot ) * lot_size[lot_array_count])
             //console.log('sell_side_loss___',crossCount+')',lot_size[lot_array_count],'===>',loss.toFixed(2))

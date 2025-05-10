@@ -386,21 +386,14 @@ async function createOrder(product_id,bitcoin_option_symbol) {
 }
  
 
-function getAdjustedDate() {
-  // Create a Date object with the current time in IST
+function getAdjustedDate() { 
   const now = new Date();
-
-  // Convert current time to IST by adding the IST offset (UTC+5:30)
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
-  const istTime = new Date(now.getTime() + istOffset);
-
-  // Check if the current IST time is after 5:30 PM
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istTime = new Date(now.getTime()); 
   if (istTime.getHours() > 17 || (istTime.getHours() === 17 && istTime.getMinutes() >= 30)) {
-    // If after 5:30 PM, add one day
     istTime.setDate(istTime.getDate() + 1);
   }
-
-  // Format the date as DD-MM-YYYY
+ 
   const day = String(istTime.getDate()).padStart(2, '0');
   const month = String(istTime.getMonth() + 1).padStart(2, '0'); // Months are zero-based
   const year = istTime.getFullYear();
@@ -411,6 +404,7 @@ function getAdjustedDate() {
 async function getCurrentPriceOfBitcoin(data_type) {
     try {
       const expiry_date = getAdjustedDate() 
+      console.log(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`)
       const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`);
       const allProducts = response.data.result;
     
@@ -428,10 +422,12 @@ async function getCurrentPriceOfBitcoin(data_type) {
                 product.contract_type == 'put_options' && product.strike_price == border_sell_price
             );
       }else if(data_type == 'current'){
-            current_running_order = 'sell'
+            current_running_order = 'sell' 
+            //console.log('allProducts___',JSON.stringify(allProducts))
             option_data = allProducts.filter(product =>
                 product.contract_type == 'put_options' && product.strike_price == spot_price-200
             ); 
+            //console.log('option_data___',option_data)
       }
     
       const bitcoin_option_data = {
@@ -446,7 +442,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
     }
   }
   
-  async function init() {
+  async function init() { 
     await cancelAllOpenOrder('START',0)
     const result = await getCurrentPriceOfBitcoin('current')
     if (!result.status) return
@@ -467,7 +463,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
     total_error_count = 0 
     isBracketOrderExist = false
       
-    await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
+    await createOrder(result?.data?.option_data?.product_id,result?.data?.option_data?.symbol)
    // emitter.emit('log', { type: "init", markPrice });
   }
 
