@@ -264,6 +264,11 @@ async function cancelAllOpenOrder(loss_profit,current_price) {
                 <td>:</td>
                 <td>${border_sell_price}</td> 
             </tr>
+            <tr>
+              <td>Number Of Time Order Executed</td>
+              <td>:</td>
+              <td>${number_of_time_order_executed}</td> 
+          </tr>
         </table>
         `
         sendEmail(message_template,`ORDER STATUS : ${loss_profit}`)
@@ -365,6 +370,11 @@ async function createOrder(product_id,bitcoin_option_symbol) {
               <td>:</td>
               <td>${bitcoin_current_price}</td> 
           </tr>
+          <tr>
+              <td>Number Of Time Order Executed</td>
+              <td>:</td>
+              <td>${number_of_time_order_executed}</td> 
+          </tr>
       </table>
       `
       sendEmail(message_template,`CREATE ORDER : ${order_information.product_symbol}`)
@@ -377,6 +387,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
     total_error_count++
     project_error_message = JSON.stringify(error?.response?.data)
     orderInProgress = false;
+    sendEmail(JSON.stringify(error.response?.data),`ERROR CREATE ORDER : ${order_information.product_symbol}`)
     //await triggerLimitOrderOnBothSide(bitcoin_current_price)
     //botRunning = false
     return { message: error?.message, status: false };
