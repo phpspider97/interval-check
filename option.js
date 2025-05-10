@@ -414,7 +414,7 @@ function getAdjustedDate() {
 
 async function getCurrentPriceOfBitcoin(data_type) {
     try {
-        let additional_profit_buy_price = 0
+        let additional_profit_buy_price = 0 
         const expiry_date = getAdjustedDate() 
         console.log(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`)
         const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`);
@@ -440,7 +440,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
                     product.contract_type == 'put_options' && product.strike_price == spot_price-200
                 ); 
                 if(Math.abs(bitcoin_current_price-spot_price)>50){
-                    additional_profit_buy_price = 100
+                    additional_profit_buy_price = 100 
                 }
                 //console.log('option_data___',option_data)
         }
@@ -448,8 +448,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
         const bitcoin_option_data = {
             option_data:option_data[0],
             border_buy_price:spot_price,
-            border_sell_price:spot_price-CANCEL_GAP,
-            additional_profit_buy_price
+            border_sell_price:spot_price-CANCEL_GAP
         } 
         return { data: bitcoin_option_data, status: true };
         } catch (error) {
