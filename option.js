@@ -23,6 +23,7 @@ let total_profit = 0;
 let border_price;
 let number_of_time_order_executed = 0;
 let bitcoin_current_price = 0
+let additional_profit_buy_price = 0
 
 let border_buy_price;
 let border_buy_profit_price;
@@ -375,6 +376,15 @@ async function createOrder(product_id,bitcoin_option_symbol) {
               <td>:</td>
               <td>${number_of_time_order_executed}</td> 
           </tr>
+          ${
+            (additional_profit_buy_price>0)?
+            `
+            <tr>
+                <td>Price Gap From Spot Price</td>
+                <td>:</td>
+                <td>${bitcoin_current_price-(parseInt(bitcoin_option_symbol.split('-')[2]+200))}</td> 
+            </tr>`:``
+          }
       </table>
       `
       sendEmail(message_template,`CREATE ORDER : ${order_information.product_symbol}`)
@@ -414,7 +424,7 @@ function getAdjustedDate() {
 
 async function getCurrentPriceOfBitcoin(data_type) {
     try {
-        let additional_profit_buy_price = 0 
+        additional_profit_buy_price = 0 
         const expiry_date = getAdjustedDate() 
         console.log(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`)
         const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`);
@@ -424,25 +434,25 @@ async function getCurrentPriceOfBitcoin(data_type) {
         bitcoin_current_price = Math.round(allProducts[0].spot_price);
         let option_data = []
         if(data_type == 'call'){
-                //current_running_order = 'buy'
-                option_data = allProducts.filter(product =>
-                    product.contract_type == 'call_options' && product.strike_price == border_buy_price
-                );
+            //current_running_order = 'buy'
+            option_data = allProducts.filter(product =>
+                product.contract_type == 'call_options' && product.strike_price == border_buy_price
+            );
         }else if(data_type == 'put'){
-                //current_running_order = 'sell'
-                option_data = allProducts.filter(product =>
-                    product.contract_type == 'put_options' && product.strike_price == border_sell_price-100
-                );
+            //current_running_order = 'sell'
+            option_data = allProducts.filter(product =>
+                product.contract_type == 'put_options' && product.strike_price == border_sell_price-100
+            );
         }else if(data_type == 'current'){
-                current_running_order = 'sell' 
-                //console.log('allProducts___',JSON.stringify(allProducts))
-                option_data = allProducts.filter(product =>
-                    product.contract_type == 'put_options' && product.strike_price == spot_price-200
-                ); 
-                if(Math.abs(bitcoin_current_price-spot_price)>50){
-                    additional_profit_buy_price = 100 
-                }
-                //console.log('option_data___',option_data)
+            current_running_order = 'sell' 
+            //console.log('allProducts___',JSON.stringify(allProducts))
+            option_data = allProducts.filter(product =>
+                product.contract_type == 'put_options' && product.strike_price == spot_price-200
+            ); 
+            if(spot_price-bitcoin_current_price < 0 &&  Math.abs(bitcoin_current_price-spot_price)>20){
+                additional_profit_buy_price = 100 
+            }
+            //console.log('option_data___',option_data)
         }
         
         const bitcoin_option_data = {
@@ -470,7 +480,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
     border_buy_profit_price = bitcoin_current_price + buy_sell_profit_point
   
     border_sell_price = result.data.border_sell_price;
-    border_sell_profit_price = border_sell_price - buy_sell_profit_point;
+    border_sell_profit_price = border_sell_price - CANCEL_GAP;
 
     //console.log('border_buy_profit_price____',bitcoin_current_price,border_buy_profit_price,border_sell_profit_price)
   
