@@ -382,7 +382,7 @@ async function createOrder(product_id,bitcoin_option_symbol) {
             <tr>
                 <td>Price Gap From Spot Price</td>
                 <td>:</td>
-                <td>${bitcoin_current_price-(parseInt(bitcoin_option_symbol.split('-')[2]+200))}</td> 
+                <td>${bitcoin_current_price-(parseInt(bitcoin_option_symbol.split('-')[2])+200)}</td> 
             </tr>`:``
           }
       </table>
