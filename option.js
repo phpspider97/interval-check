@@ -17,7 +17,7 @@ let transporter = nodemailer.createTransport({
 
 let bitcoin_product_id;
 //let current_lot = [1, 3, 7, 18]
-let current_lot = [1, 3, 9]
+let current_lot = [1, 3, 9, 27, 81, 243]
 let current_profit = 0;
 let total_profit = 0;
 let border_price;
@@ -35,9 +35,9 @@ let border_sell_price;
 let border_sell_profit_price;
    
 let botRunning = true;
-let buy_sell_profit_point = 400
+let buy_sell_profit_point = 200
 let buy_sell_point = 200
-let CANCEL_GAP = 200
+let CANCEL_GAP = 100
 let PROFIT_GAP = 0
 let lot_size_increase = 2
 let total_error_count = 0
