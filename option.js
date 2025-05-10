@@ -127,7 +127,7 @@ function wsConnect() {
                 await cancelAllOpenOrder('LOSS',message?.spot_price)
                 const result = await getCurrentPriceOfBitcoin('call');
                 if (!result.status) return;
-                await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
+                await createOrder(result?.data?.option_data?.product_id,result?.data?.option_data?.symbol)
             }
             if(current_running_order == 'buy' && message?.spot_price>border_buy_price){
                 console.log('buy_data____',message?.spot_price,'>',border_buy_price)
@@ -137,10 +137,10 @@ function wsConnect() {
                 await cancelAllOpenOrder('LOSS',message?.spot_price)
                 const result = await getCurrentPriceOfBitcoin('put');
                 if (!result.status) return;
-                await createOrder(result.data.option_data.product_id,result.data.option_data.symbol)
+                await createOrder(result?.data?.option_data?.product_id,result?.data?.option_data?.symbol)
             }
               
-            if (message?.spot_price > border_buy_profit_price+PROFIT_GAP || message?.spot_price < border_sell_profit_price-PROFIT_GAP) {  
+            if (message?.spot_price > border_buy_profit_price+additional_profit_buy_price || message?.spot_price < border_sell_profit_price) {  
                 console.log('profit_data____',border_sell_profit_price,'<',message?.spot_price,'>',border_buy_profit_price)
                 bitcoin_current_price = message?.spot_price
                 console.log('cancel_order_on_profit___')
@@ -414,43 +414,48 @@ function getAdjustedDate() {
 
 async function getCurrentPriceOfBitcoin(data_type) {
     try {
-      const expiry_date = getAdjustedDate() 
-      console.log(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`)
-      const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`);
-      const allProducts = response.data.result;
-    
-      const spot_price = Math.round(allProducts[0].spot_price / 200) * 200
-      bitcoin_current_price = Math.round(allProducts[0].spot_price);
-      let option_data = []
-      if(data_type == 'call'){
-            //current_running_order = 'buy'
-            option_data = allProducts.filter(product =>
-                product.contract_type == 'call_options' && product.strike_price == border_buy_price
-            );
-      }else if(data_type == 'put'){
-            //current_running_order = 'sell'
-            option_data = allProducts.filter(product =>
-                product.contract_type == 'put_options' && product.strike_price == border_sell_price
-            );
-      }else if(data_type == 'current'){
-            current_running_order = 'sell' 
-            //console.log('allProducts___',JSON.stringify(allProducts))
-            option_data = allProducts.filter(product =>
-                product.contract_type == 'put_options' && product.strike_price == spot_price-200
-            ); 
-            //console.log('option_data___',option_data)
-      }
-    
-      const bitcoin_option_data = {
-          option_data:option_data[0],
-          border_buy_price:spot_price,
-          border_sell_price:spot_price-CANCEL_GAP
-      } 
-      return { data: bitcoin_option_data, status: true };
-    } catch (error) {
-      console.log('error___',error)
-      return { message: error.message, status: false };
-    }
+        let additional_profit_buy_price = 0
+        const expiry_date = getAdjustedDate() 
+        console.log(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`)
+        const response = await axios.get(`${api_url}/v2/tickers/?underlying_asset_symbols=BTC&contract_types=call_options,put_options&states=live&expiry_date=${expiry_date}`);
+        const allProducts = response.data.result;
+        
+        const spot_price = Math.round(allProducts[0].spot_price / 200) * 200
+        bitcoin_current_price = Math.round(allProducts[0].spot_price);
+        let option_data = []
+        if(data_type == 'call'){
+                //current_running_order = 'buy'
+                option_data = allProducts.filter(product =>
+                    product.contract_type == 'call_options' && product.strike_price == border_buy_price
+                );
+        }else if(data_type == 'put'){
+                //current_running_order = 'sell'
+                option_data = allProducts.filter(product =>
+                    product.contract_type == 'put_options' && product.strike_price == border_sell_price-100
+                );
+        }else if(data_type == 'current'){
+                current_running_order = 'sell' 
+                //console.log('allProducts___',JSON.stringify(allProducts))
+                option_data = allProducts.filter(product =>
+                    product.contract_type == 'put_options' && product.strike_price == spot_price-200
+                ); 
+                if(Math.abs(bitcoin_current_price-spot_price)>50){
+                    additional_profit_buy_price = 100
+                }
+                //console.log('option_data___',option_data)
+        }
+        
+        const bitcoin_option_data = {
+            option_data:option_data[0],
+            border_buy_price:spot_price,
+            border_sell_price:spot_price-CANCEL_GAP,
+            additional_profit_buy_price
+        } 
+        return { data: bitcoin_option_data, status: true };
+        } catch (error) {
+        console.log('error___',error)
+        return { message: error.message, status: false };
+        }
   }
   
   async function init() { 
@@ -463,7 +468,7 @@ async function getCurrentPriceOfBitcoin(data_type) {
     //border_price = markPrice;
   
     border_buy_price = result.data.border_buy_price;
-    border_buy_profit_price = bitcoin_current_price + buy_sell_profit_point;
+    border_buy_profit_price = bitcoin_current_price + buy_sell_profit_point
   
     border_sell_price = result.data.border_sell_price;
     border_sell_profit_price = border_sell_price - buy_sell_profit_point;
