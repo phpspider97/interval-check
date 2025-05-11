@@ -89,7 +89,10 @@ function wsConnect() {
   }
    
   async function onMessage(data) {
-    const message = JSON.parse(data) 
+    const message = JSON.parse(data)  
+    if(message.type == 'error'){
+        console.log(message.message)
+    }
     if (message.type === 'success' && message.message === 'Authenticated') {
       subscribe(ws, 'orders', ['all']);
       subscribe(ws, 'v2/ticker', ['BTCUSD']); 
